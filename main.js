@@ -41,7 +41,7 @@ window.onload = main;
 var gObjetos = []
 var gUltimoT = Date.now();
 
-var modo_camera = 2
+var modo_camera = 0
 var gCamera_modo0 = {
     eye: vec3(-1, 0, 0),
     at : vec3(0, 0, -2),
