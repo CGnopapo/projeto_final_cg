@@ -74,6 +74,24 @@ function Cubo(posicao,orientacao,velo_trans, vel_rotacao, escala, cor_ambiente,c
         model = mult(model, scale(this.escala[0],this.escala[1],this.escala[2]));
         this.model = model;
     }
+    this.desenha = function () {
+        const model = this.model;
+        const modelView = mult(gCtx.view, model);
+        const modelViewInvTrans = transpose(inverse(modelView));
+
+        gl.uniformMatrix4fv(gShader.uView, false, flatten(gCtx.view));
+        gl.uniformMatrix4fv(gShader.uModel, false, flatten(model));
+        gl.uniformMatrix4fv(gShader.uInverseTranspose, false, flatten(modelViewInvTrans));
+
+        gl.uniform4fv(gShader.uCorAmb, mult(LUZ.amb, this.cor_ambiente));
+        gl.uniform4fv(gShader.uCorDif, mult(LUZ.dif, this.cor_difusao));
+        gl.uniform4fv(gShader.uCorEsp, LUZ.esp);
+        gl.uniform1f(gShader.uAlfaEsp, this.alpha_especular);
+
+        gl.bindVertexArray(this.vao);
+        gl.drawArrays(gl.TRIANGLES, 0, this.pos.length);
+        gl.bindVertexArray(null);
+    };
 }
 
 

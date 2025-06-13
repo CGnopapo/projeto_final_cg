@@ -2,7 +2,7 @@
 const FUNDO = [0, 0, 0, 1];
 
 const LUZ = {
-    pos: vec4(10, 10.0,10, 1),
+    pos: vec4(100, 100.0,100, 1),
     amb: vec4(0.2, 0.2, 0.2, 1.0),
     dif: vec4(1.0, 1.0, 1.0, 1.0),
     esp: vec4(1.0, 1.0, 1.0, 1.0),
@@ -101,11 +101,12 @@ function main() {
     gl.enable(gl.DEPTH_TEST);
 
     crieShaders();
+    crieShaders_textura();
     window.onkeydown = moveCamera
     gCtx.view = lookAt(gcamera_modos[modo_camera].eye,gcamera_modos[modo_camera].at,gcamera_modos[modo_camera].up)
 
     let carro = new Carro(
-        vec3(-10, 0, 0),              // posição
+        vec3(-10, 0.6, 0),              // posição
         vec3(0, 0, 0),              // orientação
         vec3(-1, 0, 0),           // velocidade translacional
         vec3(0, 10, 0),            // velocidade rotacional
@@ -117,7 +118,7 @@ function main() {
     carro.init()
     carro.adiciona_ao_cenario();
     let carro2 = new Carro(
-        vec3(14, 0, 0),              // posição
+        vec3(14, 0.6, 0),              // posição
         vec3(0, 0, 0),              // orientação
         vec3(-1, 0, 0),           // velocidade translacional
         vec3(0, 0, 0),            // velocidade rotacional
@@ -130,7 +131,7 @@ function main() {
     carro2.adiciona_ao_cenario();
 
     caminhao = new Caminhao(
-        vec3(0, 0, 0),              // posição
+        vec3(0, 1, 0),              // posição
         vec3(0, 0, 0),              // orientação
         1,           // velocidade translacional, caminhão sempre anda em direção a -x
         vec3(0, 0, 0),            // velocidade rotacional
@@ -143,7 +144,19 @@ function main() {
 
     caminhao.init();
     caminhao.adiciona_ao_cenario();
-
+        // Cria a pista infinita
+    
+    let pista = new Pista(
+        30, // quantidade de cubos
+        10, // largura da pista
+        20, // comprimento de cada cubo
+        vec4(1, 1, 1, 1.0), // cor ambiente
+        vec4(1, 1, 1, 1.0), // cor difusa
+        10 // alpha especular
+    );
+    pista.init();
+    pista.adiciona_ao_cenario();
+    
     render_auxiliar();
 }
 
@@ -188,11 +201,14 @@ function render_auxiliar(){
 
 function render(delta) {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    atualiza_camera(delta)
     for (let i = 0; i < gObjetos.length; i++) {
-        atualiza_camera(delta)
         gObjetos[i].atualiza_posicao_orientacao(delta);
         gObjetos[i].atualiza_model();
         gObjetos[i].desenha();
+        if (gObjetos[i] instanceof Pista) {
+            gl.useProgram(gShader.program);
+         }
     }
 }
 
