@@ -38,6 +38,7 @@ var gCtx = {
 
 window.onload = main;
 
+var gSkybox;
 var gObjetos = []
 var gUltimoT = Date.now();
 
@@ -103,6 +104,9 @@ function main() {
     crieShaders();
     window.onkeydown = moveCamera
     gCtx.view = lookAt(gcamera_modos[modo_camera].eye,gcamera_modos[modo_camera].at,gcamera_modos[modo_camera].up)
+
+    gSkybox = new Skybox();
+    gSkybox.init();
 
     let carro = new Carro(
         vec3(-10, 0, 0),              // posição
@@ -187,7 +191,13 @@ function render_auxiliar(){
 }
 
 function render(delta) {
+    gl.enable(gl.CULL_FACE);
+    gl.enable(gl.DEPTH_TEST);
+    
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gSkybox.desenha();
+    gl.useProgram(gShader.program);
+
     for (let i = 0; i < gObjetos.length; i++) {
         atualiza_camera(delta)
         gObjetos[i].atualiza_posicao_orientacao(delta);
