@@ -91,6 +91,15 @@ const CAM = {
 let gPausado = false;
 let caminhao;
 
+var farol_caminhao={
+    pos: vec3(4,3,0), // posição da frente do caminhão
+    spotlightDirection :vec3(0,-1,0), // Direção do spot light em World Space (deveria ser ajustada conforme o modelo do caminhão)
+    CorDifusaoSpotLoc : vec4(1, 1, 0, 1.0), // Cor Difusa do spot light
+    CorEspecularSpotLoc : vec4(1, 1, 1, 1.0), // Cor Especular do spot light
+    innerAngleDegrees : 30, // Ângulo interno do spot light
+    outerAngleDegrees : 60, // Ângulo externo do spot light
+}
+
 function main() {
     gCanvas = document.getElementById("glcanvas");
     gl = gCanvas.getContext('webgl2');
@@ -106,9 +115,9 @@ function main() {
     gCtx.view = lookAt(gcamera_modos[modo_camera].eye,gcamera_modos[modo_camera].at,gcamera_modos[modo_camera].up)
 
     let carro = new Carro(
-        vec3(-10, 0.6, 0),              // posição
+        vec3(-50, 0.6, 0),              // posição
         vec3(0, 0, 0),              // orientação
-        vec3(-1, 0, 0),           // velocidade translacional
+        vec3(0, 0, 0),           // velocidade translacional
         vec3(0, 10, 0),            // velocidade rotacional
         vec3(1, 1, 1),              // escala
         vec4(1, 1, 1, 1.0),   // cor ambiente
@@ -120,7 +129,7 @@ function main() {
     let carro2 = new Carro(
         vec3(14, 0.6, 0),              // posição
         vec3(0, 0, 0),              // orientação
-        vec3(-1, 0, 0),           // velocidade translacional
+        vec3(0, 0, 0),           // velocidade translacional
         vec3(0, 0, 0),            // velocidade rotacional
         vec3(1, 1, 1),              // escala
         vec4(1, 0, 0, 1.0),   // cor ambiente
@@ -133,7 +142,7 @@ function main() {
     caminhao = new Caminhao(
         vec3(0, 1, 0),              // posição
         vec3(0, 0, 0),              // orientação
-        1,           // velocidade translacional, caminhão sempre anda em direção a -x
+        0,           // velocidade translacional, caminhão sempre anda em direção a -x
         vec3(0, 0, 0),            // velocidade rotacional
         vec3(1, 1, 1),              // escala
         vec4(1, 1, 1, 1.0),   // cor ambiente
@@ -157,7 +166,37 @@ function main() {
     pista.init();
     pista.adiciona_ao_cenario();
     
+    init_farol_caminhao()
     render_auxiliar();
+}
+
+function atualiza_farol_caminhao(delta) {
+    // Atualiza orientação do caminhão
+    let orientacao = add(caminhao.orientacao, mult(delta, caminhao.vel_rotacao));
+    let R = mult(rotateZ(orientacao[2]), mult(rotateY(orientacao[1]), rotateX(orientacao[0])));
+
+    // Posição local do farol na frente do caminhão (ajuste conforme seu modelo)
+    let deslocamento_frente = 0.85; // ou outro valor conforme seu caminhão
+    let pos_local_farol = vec4(deslocamento_frente, 0, 0, 1);
+
+    // Posição global do farol
+    let pos_global_farol = add(mult(R, pos_local_farol), vec4(caminhao.posicao[0], caminhao.posicao[1], caminhao.posicao[2], 1));
+
+    // Atualiza a posição do farol no objeto global
+    //farol_caminhao.posicao = vec3(pos_global_farol[0], pos_global_farol[1], pos_global_farol[2]);
+    // Atualiza a posição do farol no shader
+
+    gl.uniform4fv(gShader.uSpotLightPos, [farol_caminhao.pos[0], farol_caminhao.pos[1], farol_caminhao.pos[2], 1.0])
+    
+}
+
+function init_farol_caminhao() {
+
+    gl.uniform3fv(gShader.uSpotLightDirectionWorld, farol_caminhao.spotlightDirection);
+    gl.uniform4fv(gShader.uCorDifusaoSpot, farol_caminhao.CorDifusaoSpotLoc);
+    gl.uniform4fv(gShader.uCorEspecularSpot, farol_caminhao.CorEspecularSpotLoc);
+    gl.uniform1f(gShader.uInnerCutoff, Math.cos(radians(farol_caminhao.innerAngleDegrees)));
+    gl.uniform1f(gShader.uOuterCutoff, Math.cos(radians(farol_caminhao.outerAngleDegrees)));
 }
 
 
@@ -202,6 +241,7 @@ function render_auxiliar(){
 function render(delta) {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     atualiza_camera(delta)
+    atualiza_farol_caminhao(delta);
     for (let i = 0; i < gObjetos.length; i++) {
         gObjetos[i].atualiza_posicao_orientacao(delta);
         gObjetos[i].atualiza_model();
@@ -294,11 +334,28 @@ function crieShaders() {
     gShader.uCorDif = gl.getUniformLocation(gShader.program, "uCorDifusao");
     gShader.uCorEsp = gl.getUniformLocation(gShader.program, "uCorEspecular");
     gShader.uAlfaEsp = gl.getUniformLocation(gShader.program, "uAlfaEsp");
+
+
+    // Obtem localizações dos uniforms da spot light
+    // Uniforms do VERTEX SHADER
+    gShader.uSpotLightPos = gl.getUniformLocation(gShader.program, "uSpotLightPos");
+    gShader.uSpotLightDirectionWorld = gl.getUniformLocation(gShader.program, "uSpotLightDirectionWorld");
+
+    // Uniforms do FRAGMENT SHADER
+    gShader.uCorDifusaoSpot = gl.getUniformLocation(gShader.program, "uCorDifusaoSpot");
+    gShader.uCorEspecularSpot = gl.getUniformLocation(gShader.program, "uCorEspecularSpot");
+    gShader.uInnerCutoff = gl.getUniformLocation(gShader.program, "uInnerCutoff");
+    gShader.uOuterCutoff = gl.getUniformLocation(gShader.program, "uOuterCutoff");
+
 };
 
 var gVertexShaderSrc = `#version 300 es
 in  vec3 aPosition;
 in  vec3 aNormal;
+uniform vec3 uSpotLightDirectionWorld; // Direção do spot light (em World Space)
+uniform vec4 uSpotLightPos; // Posição do spot light (em World Space) 
+
+
 uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uPerspective;
@@ -308,6 +365,9 @@ out vec3 vNormal;
 out vec3 vLight;
 out vec3 vView;
 
+out vec3 vSpotLight;      // Vetor em viwespace do aposition até o spot light 
+out vec3 vSpotLightDirectionView; // vetor de direção do spot light em view space
+
 void main() {
     mat4 modelView = uView * uModel;
     gl_Position = uPerspective * modelView * vec4(aPosition, 1);
@@ -315,6 +375,9 @@ void main() {
     vec4 pos = modelView * vec4(aPosition, 1);
     vLight = (uView * uLuzPos - pos).xyz;
     vView = -(pos.xyz);
+
+    vSpotLight = (uView * uSpotLightPos - pos).xyz; 
+    vSpotLightDirectionView = normalize(mat3(uView) * uSpotLightDirectionWorld); // Direção do spot light em view space
 }
 `;
 
@@ -323,12 +386,24 @@ precision highp float;
 in vec3 vNormal;
 in vec3 vLight;
 in vec3 vView;
-out vec4 corSaida;
 uniform vec4 uCorAmbiente;
 uniform vec4 uCorDifusao;
 uniform vec4 uCorEspecular;
 uniform float uAlfaEsp;
 
+// Spot light in, vetor do aPosition ate a posição do spot light
+in vec3 vSpotLight;  
+
+// Spot light direction, vetor de direção do spot light em view space
+in vec3 vSpotLightDirectionView;
+
+// Spot light uniforms
+uniform vec4 uCorDifusaoSpot;   // Cor Difusa = cor da lanterna * cor do objeto
+uniform vec4 uCorEspecularSpot; // Cor Especular = cor da lanterna * cor do objeto
+uniform float uInnerCutoff;
+uniform float uOuterCutoff;
+
+out vec4 corSaida;
 void main() {
     vec3 normalV = normalize(vNormal);
     vec3 lightV = normalize(vLight);
@@ -341,7 +416,27 @@ void main() {
     if (kd > 0.0) {
         especular = ks * uCorEspecular;
     }
-    corSaida = difusao + especular + uCorAmbiente;
+    vec4 cor_point_light= difusao + especular;
+
+    //////// Cálculo do spot light///////
+    vec3 spotLightV = normalize(vSpotLight);
+    float angle = dot(-spotLightV, vSpotLightDirectionView);
+    float spotFactor = smoothstep(uOuterCutoff, uInnerCutoff, angle);
+
+
+    vec3 spotHalfV = normalize(spotLightV + viewV);
+    float kd_spot = max(0.0, dot(normalV, spotLightV));
+    vec4 difusaoSpot = kd_spot * uCorDifusaoSpot;
+    float ks_spot = pow(max(0.0, dot(normalV, spotHalfV)), uAlfaEsp);
+    vec4 especularSpot = vec4(0.0);
+    if (kd_spot > 0.0) {
+        especularSpot = ks_spot * uCorEspecularSpot;
+    }
+    vec4 spotLightTotal = (difusaoSpot + especularSpot) * spotFactor;
+    ////////////////////////////////////
+
+    //corSaida = uCorAmbiente + cor_point_light + spotLightTotal;
+    corSaida = spotLightTotal;
     corSaida.a = 1.0;
 }
 `;
