@@ -4,8 +4,8 @@ const FUNDO = [0, 0, 0, 1];
 const LUZ = {
     pos: vec4(100, 100.0,100, 1),
     amb: vec4(0.2, 0.2, 0.2, 1.0),
-    dif: vec4(1.0, 1.0, 1.0, 1.0),
-    esp: vec4(1.0, 1.0, 1.0, 1.0),
+    dif: vec4(0.5, 0.5, 0.5, 1.0),
+    esp: vec4(0.5, 0.5, 0.5, 1.0),
 };
 
 const MAT = {
@@ -92,11 +92,11 @@ let gPausado = false;
 let caminhao;
 
 var farol_caminhao={
-    pos: vec3(8,0.5,0), // posição da frente do caminhão
+    pos: vec4(8,-0.5,0,1), // posição da frente do caminhão
     spotlightDirection :vec3(-1,0,0), // Direção do spot light em World Space (deveria ser ajustada conforme o modelo do caminhão)
-    CorDifusaoSpotLoc : vec4(1, 1, 0, 1.0), // Cor Difusa do spot light
-    CorEspecularSpotLoc : vec4(1, 1, 1, 1.0), // Cor Especular do spot light
-    innerAngleDegrees : 1, // Ângulo interno do spot light
+    CorDifusaoSpotLoc : vec4(2, 2, 0, 1.0), // Cor Difusa do spot light
+    CorEspecularSpotLoc : vec4(2, 2, 0, 1.0), // Cor Especular do spot light
+    innerAngleDegrees : 0.5, // Ângulo interno do spot light
     outerAngleDegrees : 2, // Ângulo externo do spot light
 }
 
@@ -117,11 +117,11 @@ function main() {
     let carro = new Carro(
         vec3(-10, 0.6, 0),              // posição
         vec3(0, 0, 0),              // orientação
-        vec3(0, 0, 0),           // velocidade translacional
+        vec3(-10, 0, 0),           // velocidade translacional
         vec3(0, 10, 0),            // velocidade rotacional
         vec3(1, 1, 1),              // escala
-        vec4(1, 1, 1, 1.0),   // cor ambiente
-        vec4(1, 1, 1, 1.0),   // cor difusa
+        vec4(0.5, 0.5, 0.5, 1.0),   // cor ambiente
+        vec4(0.5, 0.5, 0.5, 1.0),   // cor difusa
         20                          // alpha especular
     );
     carro.init()
@@ -142,7 +142,7 @@ function main() {
     caminhao = new Caminhao(
         vec3(0, 1, 0),              // posição
         vec3(0, 0, 0),              // orientação
-        0,           // velocidade translacional, caminhão sempre anda em direção a -x
+        10,           // velocidade translacional, caminhão sempre anda em direção a -x
         vec3(0, 0, 0),            // velocidade rotacional
         vec3(1, 1, 1),              // escala
         vec4(1, 1, 1, 1.0),   // cor ambiente
@@ -175,18 +175,13 @@ function atualiza_farol_caminhao(delta) {
     let orientacao = add(caminhao.orientacao, mult(delta, caminhao.vel_rotacao));
     let R = mult(rotateZ(orientacao[2]), mult(rotateY(orientacao[1]), rotateX(orientacao[0])));
 
-    // Posição local do farol na frente do caminhão (ajuste conforme seu modelo)
-    let deslocamento_frente = 0.85; // ou outro valor conforme seu caminhão
-    let pos_local_farol = vec4(deslocamento_frente, 0, 0, 1);
 
     // Posição global do farol
-    let pos_global_farol = add(mult(R, pos_local_farol), vec4(caminhao.posicao[0], caminhao.posicao[1], caminhao.posicao[2], 1));
+    let pos_global_farol = add(mult(R, farol_caminhao.pos), vec4(caminhao.posicao[0], caminhao.posicao[1], caminhao.posicao[2], 1));
 
     // Atualiza a posição do farol no objeto global
-    //farol_caminhao.posicao = vec3(pos_global_farol[0], pos_global_farol[1], pos_global_farol[2]);
-    // Atualiza a posição do farol no shader
 
-    gl.uniform4fv(gShader.uSpotLightPos, [farol_caminhao.pos[0], farol_caminhao.pos[1], farol_caminhao.pos[2], 1.0])
+    gl.uniform4fv(gShader.uSpotLightPos, [pos_global_farol[0], pos_global_farol[1], pos_global_farol[2], 1.0])
     
 }
 
@@ -435,8 +430,8 @@ void main() {
     vec4 spotLightTotal = (difusaoSpot + especularSpot) * spotFactor;
     ////////////////////////////////////
 
-    //corSaida = uCorAmbiente + cor_point_light + spotLightTotal;
-    corSaida = spotLightTotal;
+    corSaida = uCorAmbiente + cor_point_light + spotLightTotal;
+    //corSaida = spotLightTotal;
     corSaida.a = 1.0;
 }
 `;
