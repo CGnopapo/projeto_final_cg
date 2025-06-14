@@ -92,12 +92,12 @@ let gPausado = false;
 let caminhao;
 
 var farol_caminhao={
-    pos: vec3(4,3,0), // posição da frente do caminhão
-    spotlightDirection :vec3(0,-1,0), // Direção do spot light em World Space (deveria ser ajustada conforme o modelo do caminhão)
+    pos: vec3(8,0.5,0), // posição da frente do caminhão
+    spotlightDirection :vec3(-1,0,0), // Direção do spot light em World Space (deveria ser ajustada conforme o modelo do caminhão)
     CorDifusaoSpotLoc : vec4(1, 1, 0, 1.0), // Cor Difusa do spot light
     CorEspecularSpotLoc : vec4(1, 1, 1, 1.0), // Cor Especular do spot light
-    innerAngleDegrees : 30, // Ângulo interno do spot light
-    outerAngleDegrees : 60, // Ângulo externo do spot light
+    innerAngleDegrees : 1, // Ângulo interno do spot light
+    outerAngleDegrees : 2, // Ângulo externo do spot light
 }
 
 function main() {
@@ -115,7 +115,7 @@ function main() {
     gCtx.view = lookAt(gcamera_modos[modo_camera].eye,gcamera_modos[modo_camera].at,gcamera_modos[modo_camera].up)
 
     let carro = new Carro(
-        vec3(-50, 0.6, 0),              // posição
+        vec3(-10, 0.6, 0),              // posição
         vec3(0, 0, 0),              // orientação
         vec3(0, 0, 0),           // velocidade translacional
         vec3(0, 10, 0),            // velocidade rotacional
