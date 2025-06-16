@@ -196,7 +196,6 @@ function render(delta) {
     
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gSkybox.desenha();
-    gl.useProgram(gShader.program);
 
     for (let i = 0; i < gObjetos.length; i++) {
         atualiza_camera(delta)

@@ -147,5 +147,7 @@ function Skybox() {
 
         gl.drawArrays(gl.TRIANGLES, 0, VERTICES.length);
         gl.bindVertexArray(null);
+
+        gl.useProgram(gShader.program);
     };
 }
