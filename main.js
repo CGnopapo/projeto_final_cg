@@ -2,7 +2,7 @@
 const FUNDO = [0, 0, 0, 1];
 
 const LUZ = {
-    pos: vec4(100, 100.0,100, 1),
+    pos: vec4(100, 10000000.0,100, 1),
     amb: vec4(0.2, 0.2, 0.2, 1.0),
     dif: vec4(0.5, 0.5, 0.5, 1.0),
     esp: vec4(0.5, 0.5, 0.5, 1.0),
@@ -94,20 +94,23 @@ let caminhao;
 
 ////!!!!!!!!!! falta atenuação do spot light
 var farol_caminhao={
-    pos1: vec4(8,-0.5,-0.65,1), // posição da frente do caminhão
+    pos1: vec4(0,-0.5,-0.65,1), // posição da frente do caminhão
     spotlightDirection :vec3(-1,0,0), // Direção do spot light em World Space (deveria ser ajustada conforme o modelo do caminhão)
     CorDifusaoSpotLoc : vec4(2, 2, 0, 1.0), // Cor Difusa do spot light
     CorEspecularSpotLoc : vec4(2, 2, 0, 1.0), // Cor Especular do spot light
-    innerAngleDegrees : 0.5, // Ângulo interno do spot light
-    outerAngleDegrees : 1.8, // Ângulo externo do spot light
+    innerAngleDegrees : 0.1, // Ângulo interno do spot light
+    outerAngleDegrees : 3, // Ângulo externo do spot light
 
-    pos2: vec4(8,-0.5,0.65,1),
+    pos2: vec4(0,-0.5,0.65,1),
 }
 
 function main() {
     gCanvas = document.getElementById("glcanvas");
     gl = gCanvas.getContext('webgl2');
     if (!gl) alert("Vixe! Não achei WebGL 2.0 aqui :-(");
+
+    let botao_pause = document.getElementById("pause");
+    botao_pause.onclick = callback_botao;
 
     gl.viewport(0, 0, gCanvas.width, gCanvas.height);
     gl.clearColor(FUNDO[0], FUNDO[1], FUNDO[2], FUNDO[3]);
@@ -122,7 +125,7 @@ function main() {
         vec3(-10, 0.6, 0),              // posição
         vec3(0, 0, 0),              // orientação
         vec3(-10, 0, 0),           // velocidade translacional
-        vec3(0, 10, 0),            // velocidade rotacional
+        vec3(0, 0, 0),            // velocidade rotacional
         vec3(1, 1, 1),              // escala
         vec4(0.5, 0.5, 0.5, 1.0),   // cor ambiente
         vec4(0.5, 0.5, 0.5, 1.0),   // cor difusa
@@ -161,7 +164,7 @@ function main() {
     
     let pista = new Pista(
         30, // quantidade de cubos
-        10, // largura da pista
+        12, // largura da pista
         20, // comprimento de cada cubo
         vec4(1, 1, 1, 1.0), // cor ambiente
         vec4(1, 1, 1, 1.0), // cor difusa
@@ -228,6 +231,39 @@ function moveCamera(e) {
         case "2":
             modo_camera = 2
             break;
+        case "w":
+            caminhao.velo_trans = caminhao.velo_trans + 0.5
+            break;
+        case "x":
+            caminhao.velo_trans = caminhao.velo_trans - 0.5
+            break;
+        case "a":
+            caminhao.posicao = add(caminhao.posicao, vec3(0, 0, 0.1))
+            break;
+        case "d":
+            caminhao.posicao = add(caminhao.posicao, vec3(0, 0, -0.1))
+            break;
+        case "s":
+            caminhao.velo_trans  = 0;
+            break;    
+    }
+    render(0);
+}
+
+
+function callback_botao(e){
+    if (e.target.id === "pause"){
+        if (gPausado){
+            e.target.innerText = "Pausar"
+        }
+        else{
+            e.target.innerText = "Executar"
+        }
+        gPausado = !gPausado;
+        if (!gPausado) {
+            gUltimoT = Date.now();
+            render_auxiliar();
+        }
     }
 }
 
