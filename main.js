@@ -1,6 +1,6 @@
 "use strict";
-const FUNDO = [.6, .78, .76, 1];
-// const FUNDO = [0, 0, 0, 1];
+// const FUNDO = [.6, .78, .76, 1];
+const FUNDO = [0.7, 0.7, 0.7, 1];
 
 const LUZ = {
     pos: vec4(100, 100.0,100, 1),

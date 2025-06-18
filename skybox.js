@@ -2,6 +2,9 @@ function Skybox() {
     /* 
         Required constants
     */
+    const DIA_ID = 4;
+    const NOITE_ID = 5;
+
     const gSkyboxVertexShaderSource = `#version 300 es
 
     in vec2 aPosition;
@@ -22,14 +25,14 @@ function Skybox() {
     uniform samplerCube uSkyboxNoite;
     uniform float uFatorDiaNoite;
     uniform mat4 uViewDirectionProjectionInverse;
-    uniform vec3 uCorNeblina;
+    uniform vec4 uCorNeblina;
 
     in vec4 vPosition;
 
     out vec4 corSaida;
 
     const float limiteInferior = 0.0;
-    const float limiteSuperior = 0.05;
+    const float limiteSuperior = 0.15;
 
     void main() {
         vec4 t = uViewDirectionProjectionInverse * vPosition;
@@ -39,7 +42,7 @@ function Skybox() {
 
         float fator = (t.y - limiteInferior) / (limiteSuperior - limiteInferior);
         fator = clamp(fator, 0.0, 1.1);
-        corSaida = mix(vec4(uCorNeblina, 1.0), corSaida, fator);
+        corSaida = mix(uCorNeblina, corSaida, fator);
     }
     `;
 
@@ -67,6 +70,7 @@ function Skybox() {
             corNeblina: gl.getUniformLocation(this.program, "uCorNeblina")
         };
 
+        gl.useProgram(this.program);
         this.vao = gl.createVertexArray();
         gl.bindVertexArray(this.vao);
 
@@ -79,12 +83,13 @@ function Skybox() {
         gl.enableVertexAttribArray(this.attribs.position);
 
         let diaInfos = this.geraInfosFacesSkybox('skybox_day');
-        this.carregaInfosFacesSkybox(diaInfos, 0);
+        this.carregaInfosFacesSkybox(diaInfos, DIA_ID);
 
         let noiteInfos = this.geraInfosFacesSkybox('skybox_night');
-        this.carregaInfosFacesSkybox(noiteInfos, 1);
+        this.carregaInfosFacesSkybox(noiteInfos, NOITE_ID);
 
         gl.bindVertexArray(null);
+        gl.useProgram(gShader.program);
     };
 
     this.desenha = function () {
@@ -106,8 +111,8 @@ function Skybox() {
         );
 
         // Tell the shader to use texture unit 0 for u_skybox
-        gl.uniform1i(this.attribs.skyboxDia, 0);
-        gl.uniform1i(this.attribs.skyboxNoite, 1);
+        gl.uniform1i(this.attribs.skyboxDia, DIA_ID);
+        gl.uniform1i(this.attribs.skyboxNoite, NOITE_ID);
 
         let fator;
         if (tempo < 12000) {
@@ -124,8 +129,9 @@ function Skybox() {
         }
         // console.log(fator, tempo);
 
+        // gl.uniform1f(this.attribs.fatorDiaNoite, fator);
         gl.uniform1f(this.attribs.fatorDiaNoite, fator);
-        gl.uniform3fv(this.attribs.corNeblina, vec3(.5, 0, .5));
+        gl.uniform4fv(this.attribs.corNeblina, FUNDO);
 
         // let our quad pass the depth test at 1.0
         gl.depthFunc(gl.LEQUAL);
