@@ -18,17 +18,28 @@ function Skybox() {
     const gSkyboxFragmentShaderSource = `#version 300 es
     precision highp float;
 
-    uniform samplerCube uSkybox;
+    uniform samplerCube uSkyboxDia;
+    uniform samplerCube uSkyboxNoite;
+    uniform float uFatorDiaNoite;
     uniform mat4 uViewDirectionProjectionInverse;
+    uniform vec3 uCorNeblina;
 
     in vec4 vPosition;
 
-    // we need to declare an output for the fragment shader
-    out vec4 outColor;
+    out vec4 corSaida;
+
+    const float limiteInferior = 0.0;
+    const float limiteSuperior = 0.05;
 
     void main() {
         vec4 t = uViewDirectionProjectionInverse * vPosition;
-        outColor = texture(uSkybox, normalize(t.xyz / t.w));
+        vec4 texDia = texture(uSkyboxDia, normalize(t.xyz / t.w));
+        vec4 texNoite = texture(uSkyboxNoite, normalize(t.xyz / t.w));
+        corSaida = mix(texDia, texNoite, uFatorDiaNoite);
+
+        float fator = (t.y - limiteInferior) / (limiteSuperior - limiteInferior);
+        fator = clamp(fator, 0.0, 1.1);
+        corSaida = mix(vec4(uCorNeblina, 1.0), corSaida, fator);
     }
     `;
 
@@ -41,45 +52,21 @@ function Skybox() {
         [ 1,  1],
     ];
 
-    const faceInfos = [
-        {
-            target: gl.TEXTURE_CUBE_MAP_POSITIVE_X,
-            url: '/assets/skybox/px.png',
-        },
-        {
-            target: gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
-            url: '/assets/skybox/nx.png',
-        },
-        {
-            target: gl.TEXTURE_CUBE_MAP_POSITIVE_Y,
-            url: '/assets/skybox/py.png',
-        },
-        {
-            target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
-            url: '/assets/skybox/ny.png',
-        },
-        {
-            target: gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
-            url: '/assets/skybox/pz.png',
-        },
-        {
-            target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Z,
-            url: '/assets/skybox/nz.png',
-        },
-    ];
-
     /*
         Attributes and methods
     */
     this.program = makeProgram(gl, gSkyboxVertexShaderSource, gSkyboxFragmentShaderSource);
 
-    this.attribs = {
-        position: gl.getAttribLocation(this.program, "aPosition"),
-        skybox: gl.getUniformLocation(this.program, "uSkybox"),
-        projInverse: gl.getUniformLocation(this.program, "uViewDirectionProjectionInverse")
-    };
-
     this.init = function () {
+        this.attribs = {
+            position: gl.getAttribLocation(this.program, "aPosition"),
+            skyboxDia: gl.getUniformLocation(this.program, "uSkyboxDia"),
+            skyboxNoite: gl.getUniformLocation(this.program, "uSkyboxNoite"),
+            fatorDiaNoite: gl.getUniformLocation(this.program, "uFatorDiaNoite"),
+            projInverse: gl.getUniformLocation(this.program, "uViewDirectionProjectionInverse"),
+            corNeblina: gl.getUniformLocation(this.program, "uCorNeblina")
+        };
+
         this.vao = gl.createVertexArray();
         gl.bindVertexArray(this.vao);
 
@@ -91,10 +78,70 @@ function Skybox() {
         gl.vertexAttribPointer(this.attribs.position, 2, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(this.attribs.position);
 
+        let diaInfos = this.geraInfosFacesSkybox('skybox_day');
+        this.carregaInfosFacesSkybox(diaInfos, 0);
+
+        let noiteInfos = this.geraInfosFacesSkybox('skybox_night');
+        this.carregaInfosFacesSkybox(noiteInfos, 1);
+
+        gl.bindVertexArray(null);
+    };
+
+    this.desenha = function () {
+        gl.useProgram(this.program);
+        gl.bindVertexArray(this.vao);
+
+        let tempo = (Date.now() / 2) % 24000;
+
+        let viewDirectionProjectionMatrix = mult(gCtx.perspective, gCtx.view);
+        let rotacao = rotateY(((tempo / 100) / 240) * 360);
+        viewDirectionProjectionMatrix = mult(viewDirectionProjectionMatrix, rotacao);
+        let viewDirectionProjectionInverseMatrix = inverse(viewDirectionProjectionMatrix);
+
+        // Set the uniforms
+        gl.uniformMatrix4fv(
+            this.attribs.projInverse, 
+            false,
+            flatten(viewDirectionProjectionInverseMatrix)
+        );
+
+        // Tell the shader to use texture unit 0 for u_skybox
+        gl.uniform1i(this.attribs.skyboxDia, 0);
+        gl.uniform1i(this.attribs.skyboxNoite, 1);
+
+        let fator;
+        if (tempo < 12000) {
+            fator = 0;
+        }
+        else if (tempo < 13000) {
+            fator = (tempo - 12000) / 1000;
+        }
+        else if (tempo < 23000) {
+            fator = 1;
+        }
+        else {
+            fator = 1 - (tempo - 23000) / 1000;
+        }
+        // console.log(fator, tempo);
+
+        gl.uniform1f(this.attribs.fatorDiaNoite, fator);
+        gl.uniform3fv(this.attribs.corNeblina, vec3(.5, 0, .5));
+
+        // let our quad pass the depth test at 1.0
+        gl.depthFunc(gl.LEQUAL);
+
+        gl.drawArrays(gl.TRIANGLES, 0, VERTICES.length);
+        gl.bindVertexArray(null);
+
+        gl.useProgram(gShader.program);
+    };
+
+    this.carregaInfosFacesSkybox = function (infosFaces, id) {
         var texture = gl.createTexture();
+        gl.activeTexture(gl.TEXTURE0 + id);
         gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
 
-        faceInfos.forEach((faceInfo) => {
+        infosFaces.forEach((faceInfo) => {
             const {target, url} = faceInfo;
 
             // Upload the canvas to the cubemap face.
@@ -119,35 +166,37 @@ function Skybox() {
                 gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
             });
         });
+
         gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
         gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-
-        gl.bindVertexArray(null);
     };
 
-    this.desenha = function () {
-        gl.useProgram(this.program);
-        gl.bindVertexArray(this.vao);
-
-        let viewDirectionProjectionMatrix = mult(gCtx.perspective, gCtx.view);
-        let viewDirectionProjectionInverseMatrix = inverse(viewDirectionProjectionMatrix);
-
-        // Set the uniforms
-        gl.uniformMatrix4fv(
-            this.attribs.projInverse, 
-            false,
-            flatten(viewDirectionProjectionInverseMatrix)
-        );
-
-        // Tell the shader to use texture unit 0 for u_skybox
-        gl.uniform1i(this.attribs.skybox, 0);
-
-        // let our quad pass the depth test at 1.0
-        gl.depthFunc(gl.LEQUAL);
-
-        gl.drawArrays(gl.TRIANGLES, 0, VERTICES.length);
-        gl.bindVertexArray(null);
-
-        gl.useProgram(gShader.program);
+    this.geraInfosFacesSkybox = function (diretorio) {
+        return [
+            {
+                target: gl.TEXTURE_CUBE_MAP_POSITIVE_X,
+                url: `assets/${diretorio}/px.png`,
+            },
+            {
+                target: gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
+                url: `assets/${diretorio}/nx.png`,
+            },
+            {
+                target: gl.TEXTURE_CUBE_MAP_POSITIVE_Y,
+                url: `assets/${diretorio}/py.png`,
+            },
+            {
+                target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
+                url: `assets/${diretorio}/ny.png`,
+            },
+            {
+                target: gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
+                url: `assets/${diretorio}/pz.png`,
+            },
+            {
+                target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Z,
+                url: `assets/${diretorio}/nz.png`,
+            },
+        ];
     };
 }
