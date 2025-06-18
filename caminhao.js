@@ -405,3 +405,51 @@ function geraCilindro(pos, nor, raio, altura, segmentos) {
     }
 }
 
+function getAABBBaseCaminhao(caminhao) {
+    const escala = caminhao.escala || vec3(1,1,1);
+    const centro = caminhao.posicao;
+    const metade = [
+        1.7 * escala[0] / 2,
+        0.75 * escala[1] / 2,
+        1.5 * escala[2] / 2
+    ];
+    return {
+        min: [centro[0] - metade[0], centro[1] - metade[1], centro[2] - metade[2]],
+        max: [centro[0] + metade[0], centro[1] + metade[1], centro[2] + metade[2]]
+    };
+}
+
+function getAABBBaseCarro(carro) {
+    // Base do carro: posição relativa ao centro (0,0,0), escala (2.0, 0.5, 1.0)
+    const escala = carro.escala || vec3(1,1,1);
+    const centro = carro.posicao;
+    const metade = [
+        2.0 * escala[0] / 2,
+        0.5 * escala[1] / 2,
+        1.0 * escala[2] / 2
+    ];
+    return {
+        min: [centro[0] - metade[0], centro[1] - metade[1], centro[2] - metade[2]],
+        max: [centro[0] + metade[0], centro[1] + metade[1], centro[2] + metade[2]]
+    };
+}
+
+function aabbColide(a, b) {
+    return (
+        a.min[0] <= b.max[0] && a.max[0] >= b.min[0] &&
+        a.min[1] <= b.max[1] && a.max[1] >= b.min[1] &&
+        a.min[2] <= b.max[2] && a.max[2] >= b.min[2]
+    );
+}
+function verificaColisaoCaminhaoCarros(caminhao, gObjetos) {
+    const aabbCaminhao = getAABBBaseCaminhao(caminhao);
+    for (let objeto of gObjetos) {
+        if (objeto instanceof Carro){ 
+            const aabbCarro = getAABBBaseCarro(objeto);
+            if (aabbColide(aabbCaminhao, aabbCarro)) {
+                return true; // Colidiu!
+            }
+        }
+    }
+    return false; // Nenhuma colisão
+}

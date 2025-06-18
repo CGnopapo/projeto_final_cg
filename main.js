@@ -2,7 +2,7 @@
 const FUNDO = [0, 0, 0, 1];
 
 const LUZ = {
-    pos: vec4(100, 10000000.0,100, 1),
+    pos: vec4(100, 100000000.0,100, 1),
     amb: vec4(0.2, 0.2, 0.2, 1.0),
     dif: vec4(0.5, 0.5, 0.5, 1.0),
     esp: vec4(0.5, 0.5, 0.5, 1.0),
@@ -282,6 +282,17 @@ function render(delta) {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     atualiza_camera(delta)
     atualiza_farol_caminhao(delta);
+    if (verificaColisaoCaminhaoCarros(caminhao, gObjetos)) {
+        console.log("Colisão detectada!");
+        gl.clearColor(1, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gPausado = true;
+        let mensagem = document.createElement("h2");
+        mensagem.innerText = " Você bateu! ";
+        mensagem.style.textAlign = "center";
+        document.body.prepend(mensagem);
+        return;
+    }
     for (let i = 0; i < gObjetos.length; i++) {
         gObjetos[i].atualiza_posicao_orientacao(delta);
         gObjetos[i].atualiza_model();
