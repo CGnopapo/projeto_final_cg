@@ -46,9 +46,15 @@ out vec3 vLight;
 out vec3 vView;
 out vec2 vTexCoord;
 
+out float visibilidade;
+
+const float densidade = 0.007;
+const float gradiente = 3.0;
+
 void main() {
     mat4 modelView = uView * uModel;
-    gl_Position = uPerspective * modelView * vec4(aPosition, 1);
+    vec4 posicaoRelativa = modelView * vec4(aPosition, 1);
+    gl_Position = uPerspective * posicaoRelativa;
 
     // orienta as normais como vistas pela câmera
     vNormal = mat3(uInverseTranspose) * aNormal;
@@ -57,6 +63,10 @@ void main() {
     vLight = (uView * uLuzPos - pos).xyz;
     vView = -(pos.xyz);
     vTexCoord = aTexCoord; 
+
+    float distancia = length(posicaoRelativa.xyz);
+    visibilidade = exp(-pow(distancia * densidade, gradiente));
+    visibilidade = clamp(visibilidade, 0.0, 1.0);
 }
 `;
 
@@ -79,6 +89,9 @@ uniform float uAlfaEsp;
 
 uniform sampler2D uTextureMap;
 
+in float visibilidade;
+uniform vec3 uCorNeblina;
+
 void main() {
     vec3 normalV = normalize(vNormal);
     vec3 lightV = normalize(vLight);
@@ -98,6 +111,8 @@ void main() {
     corSaida = difusao + especular + uCorAmbiente;
     corSaida = corSaida * texture(uTextureMap, vTexCoord);
     corSaida.a = 1.0;
+
+    corSaida = mix(vec4(uCorNeblina, 1.0), corSaida, visibilidade);
 }
 `;
 function crieShaders_textura() {
@@ -138,6 +153,11 @@ function crieShaders_textura() {
     gShaderTextura.uCorDif = gl.getUniformLocation(gShaderTextura.program, "uCorDifusao");
     gShaderTextura.uCorEsp = gl.getUniformLocation(gShaderTextura.program, "uCorEspecular");
     gShaderTextura.uAlfaEsp = gl.getUniformLocation(gShaderTextura.program, "uAlfaEsp");
+
+    // Neblina
+    gShaderTextura.uCorNeblina = gl.getUniformLocation(gShaderTextura.program, "uCorNeblina");
+    gl.uniform3fv(gShaderTextura.uCorNeblina, vec3(.6, .78, .76));
+    
     gl.useProgram(gShader.program);
     }
 
