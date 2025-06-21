@@ -61,14 +61,14 @@ var gCamera_modo1 = {
     vang: 0,
     hang: 0,
     altura: 10,
-    para_tras: 20,
+    para_tras: 60,
     para_lado: -10,
     orientacao: vec3(0,0,0)
 }
 
 var gCamera_modo2 = {
     eye: vec3(-1, 0, 0),
-    at : vec3(0, 0, -2),
+    at : vec3(0, 0, 0),
     up : vec3(0, 1, 0),
     vang: 0,
     hang: 0,
@@ -235,10 +235,20 @@ function moveCamera(e) {
             gcamera_modos[modo_camera].orientacao[2] += 1
             break;
         case "ArrowLeft":
+            if (modo_camera === 1) {
+                gcamera_modos[modo_camera].orientacao[1] -=1
+            }
+            else {     
             gcamera_modos[modo_camera].orientacao[1] += 1
+            }
             break;
         case "ArrowRight":
+            if (modo_camera === 1) {
+                gcamera_modos[modo_camera].orientacao[1] +=1
+            }
+            else { 
             gcamera_modos[modo_camera].orientacao[1] -= 1
+            }
             break;
         case "0":
             modo_camera = 0
@@ -329,53 +339,85 @@ function render(delta) {
 
 function atualiza_camera(delta) {
 
-    let orientacao = add(caminhao.orientacao, mult(delta, caminhao.vel_rotacao));
+    // --- Lógica e Variáveis Comuns a Todos os Modos ---
+    const caminhao_orientacao = add(caminhao.orientacao, mult(delta, caminhao.vel_rotacao));
+    const camera_modo = gcamera_modos[modo_camera];
 
-    let R = mult(rotateZ(orientacao[2]), mult(rotateY(orientacao[1]), rotateX(orientacao[0])));
-    let eixo_x = vec4(1,0,0,0)
-
-    let eixo_x_transformado_mundo = mult(R,eixo_x)
-    let nova_direcao_translacao_mundo = mult(-1,eixo_x_transformado_mundo);
-    let vetor_deslocamento = mult(delta,mult(caminhao.velo_trans,nova_direcao_translacao_mundo));
-    let vetor_deslocamento3 = vec3(vetor_deslocamento[0],vetor_deslocamento[1],vetor_deslocamento[2]);
-    let camera_e_caminhao_pos = vec3(caminhao.posicao[0]+gcamera_modos[modo_camera].para_tras,
-        caminhao.posicao[1]+gcamera_modos[modo_camera].altura,
-        caminhao.posicao[2]+gcamera_modos[modo_camera].para_lado)
-    let posicao = add(camera_e_caminhao_pos, vetor_deslocamento3);
-
-    const r = 5;
-    const d = 1;
-    const a = 2;
-
-    const P = posicao;
-
-    let eye
-    let nova_direcao_translacao_mundo3 = vec3(nova_direcao_translacao_mundo[0],nova_direcao_translacao_mundo[1],
-        nova_direcao_translacao_mundo[2])
-    eye = add(P, mult(r+d, nova_direcao_translacao_mundo3));
+    // O vetor 'up' da câmera deve acompanhar o rolamento (eixo Z) do caminhão
+    const R_caminhao_roll = rotateZ(caminhao_orientacao[2]);
+    const up_base = vec4(camera_modo.up[0], camera_modo.up[1], camera_modo.up[2], 0);
+    const up_resultante = mult(R_caminhao_roll, up_base);
+    const up_resultante3 = vec3(up_resultante[0], up_resultante[1], up_resultante[2]);
 
 
+    if (modo_camera === 1) {
+        // ==========================================================
+        // ===== NOVA LÓGICA DE CÂMERA ORBITAL PARA O MODO 1 =====
+        // ==========================================================
 
-    let orientacao2 = gcamera_modos[modo_camera].orientacao
+        // 1. O alvo ('at') é a posição do caminhão.
+        const at = caminhao.posicao;
 
-    let R2 = mult(rotateZ(orientacao2[2]), mult(rotateY(orientacao2[1]), rotateX(orientacao2[0])));
+        // 2. Define a distância inicial da câmera com base nos parâmetros do modo 1.
+        const offset_inicial = vec4(camera_modo.para_tras, camera_modo.altura, camera_modo.para_lado, 0);
 
-    let direcao_view = normalize(nova_direcao_translacao_mundo3);
+        // 3. Cria a matriz de rotação da câmera com base na entrada do usuário (Pitch e Yaw).
+        //    (Esta parte assume que você está usando a versão de moveCamera que corrigiu os controles)
+        const orientacao_camera = camera_modo.orientacao;
+        const R_camera = mult(rotateY(orientacao_camera[1]), rotateX(orientacao_camera[0]));
 
-    let direcao_rotacionada4 = mult(R2, vec4(direcao_view[0], direcao_view[1], direcao_view[2], 0));
-    let direcao_rotacionada3 = vec3(direcao_rotacionada4[0], direcao_rotacionada4[1], direcao_rotacionada4[2]);
+        // 4. Rotaciona o vetor de distância para obter a posição correta da câmera.
+        const offset_rotacionado = mult(R_camera, offset_inicial);
+        
+        // 5. A posição da câmera ('eye') é a posição do caminhão somada ao vetor de distância rotacionado.
+        const eye = add(at, vec3(offset_rotacionado[0], offset_rotacionado[1], offset_rotacionado[2]));
 
-    if (modo_camera === 2){
-        direcao_rotacionada3 = mult(-1,direcao_rotacionada3)
+        // 6. Define a matriz de visão final para o modo 1.
+        gCtx.view = lookAt(eye, at, up_resultante3);
+
+    } else {
+        // ================================================================
+        // ===== SUA LÓGICA ORIGINAL PRESERVADA PARA OS MODOS 0 E 2 =====
+        // ================================================================
+
+        // Nota: A variável 'orientacao' foi renomeada para 'caminhao_orientacao' para clareza.
+        let R = mult(rotateZ(caminhao_orientacao[2]), mult(rotateY(caminhao_orientacao[1]), rotateX(caminhao_orientacao[0])));
+        let eixo_x = vec4(1, 0, 0, 0)
+
+        let eixo_x_transformado_mundo = mult(R, eixo_x)
+        let nova_direcao_translacao_mundo = mult(-1, eixo_x_transformado_mundo);
+        let vetor_deslocamento = mult(delta, mult(caminhao.velo_trans, nova_direcao_translacao_mundo));
+        let vetor_deslocamento3 = vec3(vetor_deslocamento[0], vetor_deslocamento[1], vetor_deslocamento[2]);
+        let camera_e_caminhao_pos = vec3(caminhao.posicao[0] + camera_modo.para_tras,
+            caminhao.posicao[1] + camera_modo.altura,
+            caminhao.posicao[2] + camera_modo.para_lado)
+        let posicao = add(camera_e_caminhao_pos, vetor_deslocamento3);
+
+        const r = 5;
+        const d = 1;
+        const a = 2;
+
+        const P = posicao;
+
+        let eye
+        let nova_direcao_translacao_mundo3 = vec3(nova_direcao_translacao_mundo[0], nova_direcao_translacao_mundo[1],
+            nova_direcao_translacao_mundo[2])
+        eye = add(P, mult(r + d, nova_direcao_translacao_mundo3));
+
+        let orientacao2 = camera_modo.orientacao
+        let R2 = mult(rotateZ(orientacao2[2]), mult(rotateY(orientacao2[1]), rotateX(orientacao2[0])));
+        let direcao_view = normalize(nova_direcao_translacao_mundo3);
+        let direcao_rotacionada4 = mult(R2, vec4(direcao_view[0], direcao_view[1], direcao_view[2], 0));
+        let direcao_rotacionada3 = vec3(direcao_rotacionada4[0], direcao_rotacionada4[1], direcao_rotacionada4[2]);
+
+        if (modo_camera === 2) {
+            direcao_rotacionada3 = mult(-1, direcao_rotacionada3)
+        }
+        let at = add(P, mult(r + a, direcao_rotacionada3));
+        
+        // A variável 'up_resultante3' já foi calculada no início da função.
+        gCtx.view = lookAt(eye, at, up_resultante3);
     }
-    let at = add(P, mult(r + a, direcao_rotacionada3));
-
-    let rotacao_z = rotateZ(orientacao[2])
-    let up4 = vec4(gcamera_modos[modo_camera].up[0],gcamera_modos[modo_camera].up[1],gcamera_modos[modo_camera].up[2],0)
-    let up_resultante = mult(rotacao_z,up4)
-    let up_resultante3 = vec3(up_resultante[0], up_resultante[1],up_resultante[2]);
-
-    gCtx.view = lookAt(eye, at, up_resultante3);
 }
 
 function crieShaders() {
