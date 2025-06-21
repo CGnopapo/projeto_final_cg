@@ -43,68 +43,80 @@ function TerrenoProcedural(posicao, lado, larguraPista, larguraFaixa, qtdX, qtdZ
     };
 
     this.geraMalha = function() {
+        // Limpa os arrays para garantir que estamos começando do zero
+        this.vertices = [];
+        this.normais = [];
+        this.indices = [];
+        this.texcoords = [];
+
+        // As coordenadas de textura fixas, exatamente como em cubo_textura.js
+        const gTextura_st = [
+            vec2(0.0, 0.0), // Canto 0
+            vec2(0.0, 1.0), // Canto 1
+            vec2(1.0, 1.0), // Canto 2
+            vec2(1.0, 0.0)  // Canto 3
+        ];
+
         const halfRoadW = this.larguraPista / 2;
         const segmentWidth = this.tamanhoX / this.qtdX;
         const segmentDepth = this.larguraFaixa / this.qtdZ;
 
-        // --- 1. Gerar Vértices ---
-        for (let ix = 0; ix <= this.qtdX; ++ix) {
-            const localX = -this.tamanhoX / 2 + ix * segmentWidth;
-            for (let iz = 0; iz <= this.qtdZ; ++iz) {
-                const blendFactor = iz / this.qtdZ;
-                let z;
-                if (this.lado === 'direito') {
-                    z = halfRoadW + (iz * segmentDepth);
-                } else {
-                    z = -halfRoadW - (iz * segmentDepth);
-                }
-                const worldX = this.posicao[0] + localX;
-                let y = this.noise(worldX, z);
-                y *= blendFactor;
-                this.vertices.push(vec4(localX, y, z, 1.0));
-
-                // --- ALTERAÇÃO APLICADA AQUI ---
-                // Define quantas vezes a textura se repetirá no terreno.
-                // Você pode ajustar este valor para mais ou menos detalhes.
-                const fatorDeRepeticao = 30.0;
-                this.texcoords.push(vec2((ix / this.qtdX) * fatorDeRepeticao, (iz / this.qtdZ) * fatorDeRepeticao));
-                // --- FIM DA ALTERAÇÃO ---
-            }
-        }
-        
-        // --- 2. Gerar Índices (lógica da resposta anterior, está correta) ---
+        // Itera sobre cada QUAD do terreno
         for (let ix = 0; ix < this.qtdX; ++ix) {
             for (let iz = 0; iz < this.qtdZ; ++iz) {
-                const i_tl = ix * (this.qtdZ + 1) + iz;
-                const i_tr = (ix + 1) * (this.qtdZ + 1) + iz;
-                const i_bl = i_tl + 1;
-                const i_br = i_tr + 1;
                 
-                if (this.lado === 'direito') {
-                    this.indices.push(i_tl, i_bl, i_tr);
-                    this.indices.push(i_tr, i_bl, i_br);
-                } else { // 'esquerdo'
-                    this.indices.push(i_tl, i_tr, i_bl);
-                    this.indices.push(i_bl, i_tr, i_br);
+                // --- 1. Calcular a posição dos 4 vértices do quad atual ---
+                const verticesDoQuad = [];
+                for (let i = 0; i < 2; i++) { // para ix e ix+1
+                    for (let j = 0; j < 2; j++) { // para iz e iz+1
+                        const current_ix = ix + i;
+                        const current_iz = iz + j;
+
+                        const localX = -this.tamanhoX / 2 + current_ix * segmentWidth;
+                        const blendFactor = current_iz / this.qtdZ;
+                        
+                        let z;
+                        if (this.lado === 'direito') {
+                            z = halfRoadW + (current_iz * segmentDepth);
+                        } else {
+                            z = -halfRoadW - (current_iz * segmentDepth);
+                        }
+                        
+                        const worldX = this.posicao[0] + localX;
+                        let y = this.noise(worldX, z) * blendFactor;
+                        
+                        verticesDoQuad.push(vec4(localX, y, z, 1.0));
+                    }
                 }
+                const v0 = verticesDoQuad[0]; // Canto (ix, iz)
+                const v1 = verticesDoQuad[1]; // Canto (ix, iz+1)
+                const v2 = verticesDoQuad[2]; // Canto (ix+1, iz)
+                const v3 = verticesDoQuad[3]; // Canto (ix+1, iz+1)
+
+                // --- 2. Adicionar vértices, normais e coordenadas de textura para este quad ---
+                
+                // Calcula uma normal única para o quad (flat shading)
+                const edge1 = subtract(v1, v0);
+                const edge2 = subtract(v2, v0);
+                let faceNormal = normalize(cross(edge1, edge2));
+
+                // Para o lado esquerdo, a normal precisa ser invertida
+                if(this.lado === 'esquerdo') {
+                    faceNormal = mult(-1, faceNormal);
+                }
+                
+                // Adiciona os 4 vértices e seus atributos
+                const baseIndex = this.vertices.length;
+                this.vertices.push(v0, v1, v2, v3);
+                this.normais.push(faceNormal, faceNormal, faceNormal, faceNormal);
+                // Mapeia as coordenadas de gTextura_st para os vértices do quad
+                this.texcoords.push(gTextura_st[0], gTextura_st[1], gTextura_st[3], gTextura_st[2]);
+
+                // --- 3. Adicionar os índices para os 2 triângulos do quad ---
+                this.indices.push(baseIndex, baseIndex + 1, baseIndex + 2);
+                this.indices.push(baseIndex + 2, baseIndex + 1, baseIndex + 3);
             }
         }
-
-        // --- 3. Calcular Normais (lógica da resposta anterior, está correta) ---
-        this.normais = new Array(this.vertices.length).fill(vec3(0,0,0));
-        for (let i = 0; i < this.indices.length; i += 3) {
-            const i0 = this.indices[i], i1 = this.indices[i+1], i2 = this.indices[i+2];
-            const v0 = this.vertices[i0], v1 = this.vertices[i1], v2 = this.vertices[i2];
-            
-            const edge1 = subtract(v1, v0);
-            const edge2 = subtract(v2, v0);
-            const faceNormal = cross(edge1, edge2);
-            
-            this.normais[i0] = add(this.normais[i0], faceNormal);
-            this.normais[i1] = add(this.normais[i1], faceNormal);
-            this.normais[i2] = add(this.normais[i2], faceNormal);
-        }
-        for (let i = 0; i < this.normais.length; i++) this.normais[i] = normalize(this.normais[i]);
     };
 
     
