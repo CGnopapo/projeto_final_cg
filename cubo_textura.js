@@ -173,10 +173,10 @@ function Cubo_textura(posicao,orientacao,velo_trans, vel_rotacao, escala, cor_am
 
         // Configura textura
         if (e_da_internet){
-            configureTexturaDaURL(this.textura);
+            this.texture = configureTexturaDaURL(this.textura);
         }
         else {
-            configureTextura(this.textura);
+            this.texture = configureTextura(this.textura,0);
         }
         // === Criação do VAO ===
         this.vao = gl.createVertexArray();
@@ -234,6 +234,9 @@ function Cubo_textura(posicao,orientacao,velo_trans, vel_rotacao, escala, cor_am
     }
     this.desenha = function () {
         gl.useProgram(gShaderTextura.program);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        gl.uniform1i(gl.getUniformLocation(gShaderTextura.program, "uTextureMap"), 0);
         const model = this.model;
         const modelView = mult(gCtx.view, model);
         const modelViewInvTrans = transpose(inverse(modelView));
@@ -286,9 +289,10 @@ function quad_textura(pos, nor,textura_st, vert, a, b, c, d) {
     textura_st.push(gTextura_st[3]);
 };
 
-function configureTextura(img) {
+function configureTextura(img, unidade) {
+    // unidade: 0 para TEXTURE0, 1 para TEXTURE1, etc.
     var texture = gl.createTexture();
-    gl.activeTexture(gl.TEXTURE0);
+    gl.activeTexture(gl.TEXTURE0 + (unidade || 0));
     gl.bindTexture(gl.TEXTURE_2D, texture);
 
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
@@ -299,6 +303,8 @@ function configureTextura(img) {
 
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+
+    return texture; // retorne o objeto de textura se quiser guardar para usar depois
 }
 
 function configureTexturaDaURL(url) {

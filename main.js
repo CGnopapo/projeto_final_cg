@@ -111,6 +111,9 @@ function main() {
 
     let botao_pause = document.getElementById("pause");
     botao_pause.onclick = callback_botao;
+    let botao_reiniciar = document.getElementById("reiniciar");
+    botao_reiniciar.onclick = callback_botao;
+
 
     gl.viewport(0, 0, gCanvas.width, gCanvas.height);
     gl.clearColor(FUNDO[0], FUNDO[1], FUNDO[2], FUNDO[3]);
@@ -174,6 +177,23 @@ function main() {
     pista.adiciona_ao_cenario();
     
     init_farol_caminhao()
+    let textura_terreno = new Image();
+    textura_terreno.src = "b.jpg";
+
+    let terreno = new TerrenoProcedural(
+        30, // resolução em X (mais = mais suave)
+        30, // resolução em Z (mais = mais suave)
+        1200, // largura do terreno em X
+        600,  // largura do terreno em Z
+        20,   // altura máxima do terreno
+        vec4(0.2, 0.8, 0.2, 1.0), // cor ambiente (verde)
+        vec4(0.2, 0.8, 0.2, 1.0), // cor difusa
+        10,   // alpha especular
+        textura_terreno // textura do terreno
+    );
+    terreno.init();
+    terreno.adiciona_ao_cenario();
+
     render_auxiliar();
 }
 
@@ -265,6 +285,9 @@ function callback_botao(e){
             render_auxiliar();
         }
     }
+    if (e.target.id === "reiniciar") {
+        location.reload();
+    }
 }
 
 
@@ -291,6 +314,8 @@ function render(delta) {
         mensagem.innerText = " Você bateu! ";
         mensagem.style.textAlign = "center";
         document.body.prepend(mensagem);
+        let botao_pause = document.getElementById("pause");
+        botao_pause.disabled = true;
         return;
     }
     for (let i = 0; i < gObjetos.length; i++) {
