@@ -48,6 +48,35 @@ function Pista(qtdCubos, largura, comprimento, cor_ambiente, cor_difusao, alpha_
         for (let cubo of this.cubos) {
             if (cubo.posicao[0] > ponto_corte) {
                 cubo.posicao[0] -= comprimento_total_pista;
+
+                if (Math.random() < 0.3){
+
+                    const centroDaFaixa = this.largura / 4; 
+                    const lado = Math.random() < 0.5 ? -1 : 1;
+                    const posZ = lado * centroDaFaixa; 
+                    let pos_novo_carro = vec3(cubo.posicao[0], 0.6, posZ); // Usa a nova posição do cubo
+
+                    let vel_x = -8 - Math.random()*6;
+                    let cor_aleatoria = vec4(
+                        Math.random(), // R entre 0.0 e 1.0
+                        Math.random(), // G entre 0.0 e 1.0
+                        Math.random(), // B entre 0.0 e 1.0
+                        1.0
+                    );
+
+                    let carro = new Carro(
+                    pos_novo_carro,              // posição
+                    vec3(0, 0, 0),              // orientação
+                    vec3(vel_x, 0, 0),          // velocidade translacional
+                    vec3(0, 0, 0),              // velocidade rotacional
+                    vec3(1, 1, 1),              // escala
+                    cor_aleatoria,               // cor ambiente
+                    cor_aleatoria,                 // cor difusa
+                    80                          // alpha especular
+                );
+                carro.init()
+                carro.adiciona_ao_cenario();
+                }
             }
         }
     };

@@ -57,7 +57,7 @@ function GerenciadorTerreno(textura, lado, larguraPista, larguraFaixa) {
     this.atualiza_posicao_orientacao = function(delta) {
         const posCaminhaoX = caminhao.posicao[0];
 
-        const gatilhoParaAdicionar = this.proximoX + this.tamanhoX / 2;
+        const gatilhoParaAdicionar = this.proximoX + this.tamanhoX;
         if (posCaminhaoX < gatilhoParaAdicionar) {
             this.adicionarTerreno(this.proximoX);
             this.proximoX -= this.tamanhoX;

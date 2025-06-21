@@ -5,7 +5,7 @@ const LUZ = {
     pos: vec4(100, 100000000.0,100, 1),
     amb: vec4(0.2, 0.2, 0.2, 1.0),
     dif: vec4(0.5, 0.5, 0.5, 1.0),
-    esp: vec4(0.5, 0.5, 0.5, 1.0),
+    esp: vec4(1, 1, 1, 1.0),
 };
 
 const MAT = {
@@ -66,7 +66,6 @@ var gCamera_modo1 = {
     orientacao: vec3(0,0,0)
 }
 
-/// Falta fazer, seria a câmera traseira
 var gCamera_modo2 = {
     eye: vec3(-1, 0, 0),
     at : vec3(0, 0, -2),
@@ -166,7 +165,7 @@ function main() {
         // Cria a pista infinita
     
     let pista = new Pista(
-        30, // quantidade de cubos
+        60, // quantidade de cubos
         12, // largura da pista
         20, // comprimento de cada cubo
         vec4(1, 1, 1, 1.0), // cor ambiente
