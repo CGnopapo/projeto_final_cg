@@ -27,8 +27,7 @@ function TerrenoProcedural(posicao, lado, larguraPista, larguraFaixa, qtdX, qtdZ
     this.textura = textura;
     this.e_da_internet = e_da_internet;
     
-    // As propriedades do terreno agora são baseadas nos parâmetros de faixa
-    this.tamanhoX = 1200; // Largura do "pedaço" de terreno ao longo da pista
+    this.tamanhoX = 1200;
 
     this.vertices = [];
     this.normais = [];
@@ -51,31 +50,23 @@ function TerrenoProcedural(posicao, lado, larguraPista, larguraFaixa, qtdX, qtdZ
         // --- 1. Gerar Vértices ---
         for (let ix = 0; ix <= this.qtdX; ++ix) {
             const localX = -this.tamanhoX / 2 + ix * segmentWidth;
-
             for (let iz = 0; iz <= this.qtdZ; ++iz) {
-                // Fator de mistura que vai de 0 (na borda da pista) a 1 (na borda externa do terreno)
                 const blendFactor = iz / this.qtdZ;
-
                 let z;
                 if (this.lado === 'direito') {
                     z = halfRoadW + (iz * segmentDepth);
-                } else { // 'esquerdo'
+                } else {
                     z = -halfRoadW - (iz * segmentDepth);
                 }
-
                 const worldX = this.posicao[0] + localX;
                 let y = this.noise(worldX, z);
-                
-                // Aplica o fator de mistura, forçando a altura a ser 0 na borda da pista
-                // e aumentando suavemente para a altura do ruído.
                 y *= blendFactor;
-
                 this.vertices.push(vec4(localX, y, z, 1.0));
                 this.texcoords.push(vec2(ix / this.qtdX, iz / this.qtdZ));
             }
         }
         
-        // --- 2. Gerar Índices ---
+        // --- 2. Gerar Índices (COM CORREÇÃO DE WINDING ORDER) ---
         for (let ix = 0; ix < this.qtdX; ++ix) {
             for (let iz = 0; iz < this.qtdZ; ++iz) {
                 const i_tl = ix * (this.qtdZ + 1) + iz;
@@ -83,8 +74,15 @@ function TerrenoProcedural(posicao, lado, larguraPista, larguraFaixa, qtdX, qtdZ
                 const i_bl = i_tl + 1;
                 const i_br = i_tr + 1;
                 
-                this.indices.push(i_tl, i_bl, i_tr);
-                this.indices.push(i_tr, i_bl, i_br);
+                if (this.lado === 'direito') {
+                    // Ordem que resulta em normal para cima quando Z aumenta.
+                    this.indices.push(i_tl, i_bl, i_tr);
+                    this.indices.push(i_tr, i_bl, i_br);
+                } else { // 'esquerdo'
+                    // Ordem invertida para resultar em normal para cima quando Z diminui.
+                    this.indices.push(i_tl, i_tr, i_bl);
+                    this.indices.push(i_bl, i_tr, i_br);
+                }
             }
         }
 
@@ -105,7 +103,6 @@ function TerrenoProcedural(posicao, lado, larguraPista, larguraFaixa, qtdX, qtdZ
         for (let i = 0; i < this.normais.length; i++) this.normais[i] = normalize(this.normais[i]);
     };
     
-    // O restante das funções (init, atualiza_model, desenha) permanece o mesmo das respostas anteriores
     this.init = function() {
         gl.useProgram(gShaderTextura.program);
         this.geraMalha();
@@ -151,8 +148,6 @@ function TerrenoProcedural(posicao, lado, larguraPista, larguraFaixa, qtdX, qtdZ
     };
 
     this.atualiza_model = function() {
-        // A matriz de modelo apenas move o bloco de terreno ao longo do eixo X.
-        // A posição Z já está embutida na geometria dos vértices.
         this.model = translate(this.posicao[0], this.posicao[1], this.posicao[2]);
     };
 
