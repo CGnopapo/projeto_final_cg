@@ -180,19 +180,9 @@ function main() {
     let textura_terreno = new Image();
     textura_terreno.src = "b.jpg";
 
-    let terreno = new TerrenoProcedural(
-        30, // resolução em X (mais = mais suave)
-        30, // resolução em Z (mais = mais suave)
-        1200, // largura do terreno em X
-        600,  // largura do terreno em Z
-        20,   // altura máxima do terreno
-        vec4(0.2, 0.8, 0.2, 1.0), // cor ambiente (verde)
-        vec4(0.2, 0.8, 0.2, 1.0), // cor difusa
-        10,   // alpha especular
-        textura_terreno // textura do terreno
-    );
-    terreno.init();
-    terreno.adiciona_ao_cenario();
+    let gerenciadorTerreno = new GerenciadorTerreno(textura_terreno);
+    gerenciadorTerreno.init();
+    gerenciadorTerreno.adiciona_ao_cenario();
 
     render_auxiliar();
 }
