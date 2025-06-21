@@ -180,9 +180,18 @@ function main() {
     let textura_terreno = new Image();
     textura_terreno.src = "b.jpg";
 
-    let gerenciadorTerreno = new GerenciadorTerreno(textura_terreno);
-    gerenciadorTerreno.init();
-    gerenciadorTerreno.adiciona_ao_cenario();
+    const larguraPista = 12.0;
+    const larguraFaixaTerreno = 300.0; // Define a largura do terreno em cada lado da pista
+
+    // Cria um gerenciador para o lado direito da pista
+    let gerenciadorDireito = new GerenciadorTerreno(textura_terreno, 'direito', larguraPista, larguraFaixaTerreno);
+    gerenciadorDireito.init();
+    gerenciadorDireito.adiciona_ao_cenario();
+
+    // Cria um gerenciador para o lado esquerdo da pista
+    let gerenciadorEsquerdo = new GerenciadorTerreno(textura_terreno, 'esquerdo', larguraPista, larguraFaixaTerreno);
+    gerenciadorEsquerdo.init();
+    gerenciadorEsquerdo.adiciona_ao_cenario();
 
     render_auxiliar();
 }

@@ -1,29 +1,34 @@
 /**
- * Gera um bloco de terreno procedural em uma posição específica.
- * @param {vec3} posicao - A posição central (x, y, z) do bloco de terreno.
+ * Gera uma faixa de terreno procedural que se conecta à lateral da pista.
+ * @param {vec3} posicao - Posição X do bloco de terreno. O Z é determinado pelo lado.
+ * @param {string} lado - 'direito' ou 'esquerdo', para determinar de que lado da pista gerar.
+ * @param {number} larguraPista - A largura total da pista.
+ * @param {number} larguraFaixa - A largura da faixa de terreno a ser gerada (da pista para fora).
  * @param {number} qtdX - Resolução do terreno no eixo X.
- * @param {number} qtdZ - Resolução do terreno no eixo Z.
- * @param {number} tamanhoX - Largura total do bloco.
- * @param {number} tamanhoZ - Profundidade total do bloco.
- * @param {number} alturaMax - A altura máxima da variação do terreno.
+ * @param {number} qtdZ - Resolução do terreno no eixo Z (ao longo da larguraFaixa).
+ * @param {number} alturaMax - A altura máxima da variação do relevo.
  * @param {vec4} cor_ambiente - Cor de ambiente do material.
  * @param {vec4} cor_difusao - Cor difusa do material.
  * @param {number} alpha_especular - Expoente especular do material.
  * @param {Image} textura - A imagem de textura a ser usada.
  * @param {boolean} e_da_internet - Flag para carregar textura de URL.
  */
-function TerrenoProcedural(posicao, qtdX, qtdZ, tamanhoX, tamanhoZ, alturaMax, cor_ambiente, cor_difusao, alpha_especular, textura, e_da_internet) {
+function TerrenoProcedural(posicao, lado, larguraPista, larguraFaixa, qtdX, qtdZ, alturaMax, cor_ambiente, cor_difusao, alpha_especular, textura, e_da_internet) {
     this.posicao = posicao;
+    this.lado = lado;
+    this.larguraPista = larguraPista;
+    this.larguraFaixa = larguraFaixa;
     this.qtdX = qtdX;
     this.qtdZ = qtdZ;
-    this.tamanhoX = tamanhoX;
-    this.tamanhoZ = tamanhoZ;
     this.alturaMax = alturaMax;
     this.cor_ambiente = cor_ambiente;
     this.cor_difusao = cor_difusao;
     this.alpha_especular = alpha_especular;
     this.textura = textura;
     this.e_da_internet = e_da_internet;
+    
+    // As propriedades do terreno agora são baseadas nos parâmetros de faixa
+    this.tamanhoX = 1200; // Largura do "pedaço" de terreno ao longo da pista
 
     this.vertices = [];
     this.normais = [];
@@ -33,49 +38,74 @@ function TerrenoProcedural(posicao, qtdX, qtdZ, tamanhoX, tamanhoZ, alturaMax, c
     this.vao = null;
     this.model = null;
 
-    // Função de ruído que usa coordenadas do mundo para garantir que os blocos de terreno se conectem perfeitamente.
     this.noise = function(worldX, worldZ) {
-        const scale = 50.0; // Ajuste este valor para mais ou menos detalhes no relevo.
+        const scale = 50.0;
         return Math.sin(worldX / scale) * Math.cos(worldZ / scale) * this.alturaMax;
     };
 
-    // Gera a malha de vértices, normais, etc., para este bloco de terreno.
     this.geraMalha = function() {
+        const halfRoadW = this.larguraPista / 2;
         const segmentWidth = this.tamanhoX / this.qtdX;
-        const segmentDepth = this.tamanhoZ / this.qtdZ;
+        const segmentDepth = this.larguraFaixa / this.qtdZ;
 
+        // --- 1. Gerar Vértices ---
         for (let ix = 0; ix <= this.qtdX; ++ix) {
             const localX = -this.tamanhoX / 2 + ix * segmentWidth;
+
             for (let iz = 0; iz <= this.qtdZ; ++iz) {
-                const localZ = -this.tamanhoZ / 2 + iz * segmentDepth;
+                // Fator de mistura que vai de 0 (na borda da pista) a 1 (na borda externa do terreno)
+                const blendFactor = iz / this.qtdZ;
+
+                let z;
+                if (this.lado === 'direito') {
+                    z = halfRoadW + (iz * segmentDepth);
+                } else { // 'esquerdo'
+                    z = -halfRoadW - (iz * segmentDepth);
+                }
 
                 const worldX = this.posicao[0] + localX;
-                const worldZ = this.posicao[2] + localZ;
-
-                const y = this.noise(worldX, worldZ);
-                this.vertices.push(vec4(localX, y, localZ, 1.0));
+                let y = this.noise(worldX, z);
                 
-                // Uma normal simples apontando para cima. Para um sombreamento mais preciso,
-                // as normais deveriam ser calculadas com base na altura dos vértices vizinhos.
-                this.normais.push(vec3(0.0, 1.0, 0.0));
+                // Aplica o fator de mistura, forçando a altura a ser 0 na borda da pista
+                // e aumentando suavemente para a altura do ruído.
+                y *= blendFactor;
+
+                this.vertices.push(vec4(localX, y, z, 1.0));
                 this.texcoords.push(vec2(ix / this.qtdX, iz / this.qtdZ));
             }
         }
-
-        // Gera os índices para renderizar a malha com triângulos.
-        for (let iz = 0; iz < this.qtdZ; ++iz) {
-            for (let ix = 0; ix < this.qtdX; ++ix) {
-                const a = iz * (this.qtdX + 1) + ix;
-                const b = a + 1;
-                const c = a + (this.qtdX + 1);
-                const d = c + 1;
-                this.indices.push(a, c, b);
-                this.indices.push(b, c, d);
+        
+        // --- 2. Gerar Índices ---
+        for (let ix = 0; ix < this.qtdX; ++ix) {
+            for (let iz = 0; iz < this.qtdZ; ++iz) {
+                const i_tl = ix * (this.qtdZ + 1) + iz;
+                const i_tr = (ix + 1) * (this.qtdZ + 1) + iz;
+                const i_bl = i_tl + 1;
+                const i_br = i_tr + 1;
+                
+                this.indices.push(i_tl, i_bl, i_tr);
+                this.indices.push(i_tr, i_bl, i_br);
             }
         }
-    };
 
-    // Inicializa os buffers da GPU.
+        // --- 3. Calcular Normais ---
+        this.normais = new Array(this.vertices.length).fill(vec3(0,0,0));
+        for (let i = 0; i < this.indices.length; i += 3) {
+            const i0 = this.indices[i], i1 = this.indices[i+1], i2 = this.indices[i+2];
+            const v0 = this.vertices[i0], v1 = this.vertices[i1], v2 = this.vertices[i2];
+            
+            const edge1 = subtract(v1, v0);
+            const edge2 = subtract(v2, v0);
+            const faceNormal = cross(edge1, edge2);
+            
+            this.normais[i0] = add(this.normais[i0], faceNormal);
+            this.normais[i1] = add(this.normais[i1], faceNormal);
+            this.normais[i2] = add(this.normais[i2], faceNormal);
+        }
+        for (let i = 0; i < this.normais.length; i++) this.normais[i] = normalize(this.normais[i]);
+    };
+    
+    // O restante das funções (init, atualiza_model, desenha) permanece o mesmo das respostas anteriores
     this.init = function() {
         gl.useProgram(gShaderTextura.program);
         this.geraMalha();
@@ -83,7 +113,6 @@ function TerrenoProcedural(posicao, qtdX, qtdZ, tamanhoX, tamanhoZ, alturaMax, c
         if (this.e_da_internet) {
             this.texture = configureTexturaDaURL(this.textura);
         } else {
-            // O terreno original usava a unidade de textura 1.
             this.texture = configureTextura(this.textura, 1);
         }
 
@@ -121,12 +150,12 @@ function TerrenoProcedural(posicao, qtdX, qtdZ, tamanhoX, tamanhoZ, alturaMax, c
         gl.useProgram(gShader.program);
     };
 
-    // Atualiza a matriz 'model' para posicionar o bloco no mundo.
     this.atualiza_model = function() {
+        // A matriz de modelo apenas move o bloco de terreno ao longo do eixo X.
+        // A posição Z já está embutida na geometria dos vértices.
         this.model = translate(this.posicao[0], this.posicao[1], this.posicao[2]);
     };
 
-    // Desenha o bloco de terreno.
     this.desenha = function() {
         gl.useProgram(gShaderTextura.program);
         gl.activeTexture(gl.TEXTURE1);
@@ -152,6 +181,6 @@ function TerrenoProcedural(posicao, qtdX, qtdZ, tamanhoX, tamanhoZ, alturaMax, c
 
         gl.useProgram(gShader.program);
     };
-
+    
     this.atualiza_posicao_orientacao = function(delta) { /* Gerenciado por GerenciadorTerreno */ };
 }
