@@ -62,11 +62,17 @@ function TerrenoProcedural(posicao, lado, larguraPista, larguraFaixa, qtdX, qtdZ
                 let y = this.noise(worldX, z);
                 y *= blendFactor;
                 this.vertices.push(vec4(localX, y, z, 1.0));
-                this.texcoords.push(vec2(ix / this.qtdX, iz / this.qtdZ));
+
+                // --- ALTERAÇÃO APLICADA AQUI ---
+                // Define quantas vezes a textura se repetirá no terreno.
+                // Você pode ajustar este valor para mais ou menos detalhes.
+                const fatorDeRepeticao = 30.0;
+                this.texcoords.push(vec2((ix / this.qtdX) * fatorDeRepeticao, (iz / this.qtdZ) * fatorDeRepeticao));
+                // --- FIM DA ALTERAÇÃO ---
             }
         }
         
-        // --- 2. Gerar Índices (COM CORREÇÃO DE WINDING ORDER) ---
+        // --- 2. Gerar Índices (lógica da resposta anterior, está correta) ---
         for (let ix = 0; ix < this.qtdX; ++ix) {
             for (let iz = 0; iz < this.qtdZ; ++iz) {
                 const i_tl = ix * (this.qtdZ + 1) + iz;
@@ -75,18 +81,16 @@ function TerrenoProcedural(posicao, lado, larguraPista, larguraFaixa, qtdX, qtdZ
                 const i_br = i_tr + 1;
                 
                 if (this.lado === 'direito') {
-                    // Ordem que resulta em normal para cima quando Z aumenta.
                     this.indices.push(i_tl, i_bl, i_tr);
                     this.indices.push(i_tr, i_bl, i_br);
                 } else { // 'esquerdo'
-                    // Ordem invertida para resultar em normal para cima quando Z diminui.
                     this.indices.push(i_tl, i_tr, i_bl);
                     this.indices.push(i_bl, i_tr, i_br);
                 }
             }
         }
 
-        // --- 3. Calcular Normais ---
+        // --- 3. Calcular Normais (lógica da resposta anterior, está correta) ---
         this.normais = new Array(this.vertices.length).fill(vec3(0,0,0));
         for (let i = 0; i < this.indices.length; i += 3) {
             const i0 = this.indices[i], i1 = this.indices[i+1], i2 = this.indices[i+2];
@@ -102,6 +106,7 @@ function TerrenoProcedural(posicao, lado, larguraPista, larguraFaixa, qtdX, qtdZ
         }
         for (let i = 0; i < this.normais.length; i++) this.normais[i] = normalize(this.normais[i]);
     };
+
     
     this.init = function() {
         gl.useProgram(gShaderTextura.program);
