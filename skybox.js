@@ -14,7 +14,6 @@ function Skybox() {
         vec4 pos = vec4(aPosition, 1.0, 1.0);
         vPosition = pos;
         gl_Position = pos;
-        gl_Position.z = 1.0;
     }
     `;
 
@@ -41,7 +40,7 @@ function Skybox() {
         corSaida = mix(texDia, texNoite, uFatorDiaNoite);
 
         float fator = (t.y - limiteInferior) / (limiteSuperior - limiteInferior);
-        fator = clamp(fator, 0.0, 1.1);
+        fator = clamp(fator, 0.0, 1.0);
         corSaida = mix(uCorNeblina, corSaida, fator);
     }
     `;
@@ -61,6 +60,8 @@ function Skybox() {
     this.program = makeProgram(gl, gSkyboxVertexShaderSource, gSkyboxFragmentShaderSource);
 
     this.init = function () {
+        this.orientacao = 0;
+
         this.attribs = {
             position: gl.getAttribLocation(this.program, "aPosition"),
             skyboxDia: gl.getUniformLocation(this.program, "uSkyboxDia"),
@@ -98,8 +99,14 @@ function Skybox() {
 
         let tempo = (Date.now() / 2) % 24000;
 
-        let viewDirectionProjectionMatrix = mult(gCtx.perspective, gCtx.view);
-        let rotacao = rotateY(((tempo / 100) / 240) * 360);
+        let view = gCtx.view;
+        view[0][3] = 0;
+        view[1][3] = 0;
+        view[2][3] = 0;
+        let viewDirectionProjectionMatrix = mult(gCtx.perspective, view);
+        this.orientacao += .01;
+        let rotacao = rotateY(this.orientacao);
+        // let rotacao = rotateY(0);
         viewDirectionProjectionMatrix = mult(viewDirectionProjectionMatrix, rotacao);
         let viewDirectionProjectionInverseMatrix = inverse(viewDirectionProjectionMatrix);
 
@@ -127,9 +134,7 @@ function Skybox() {
         else {
             fator = 1 - (tempo - 23000) / 1000;
         }
-        // console.log(fator, tempo);
 
-        // gl.uniform1f(this.attribs.fatorDiaNoite, fator);
         gl.uniform1f(this.attribs.fatorDiaNoite, fator);
         gl.uniform4fv(this.attribs.corNeblina, FUNDO);
 

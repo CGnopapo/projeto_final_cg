@@ -1,6 +1,6 @@
 "use strict";
 // const FUNDO = [.6, .78, .76, 1];
-const FUNDO = [0.7, 0.7, 0.7, 1];
+const FUNDO = [0.6, 0.6, 0.6, 1];
 
 const LUZ = {
     pos: vec4(100, 100.0,100, 1),
@@ -363,6 +363,8 @@ function crieShaders() {
     gShader.uInnerCutoff = gl.getUniformLocation(gShader.program, "uInnerCutoff");
     gShader.uOuterCutoff = gl.getUniformLocation(gShader.program, "uOuterCutoff");
 
+    gShader.uCorNeblina = gl.getUniformLocation(gShader.program, "uCorNeblina");
+    gl.uniform4fv(gShader.uCorNeblina, FUNDO);
 };
 
 var gVertexShaderSrc = `#version 300 es
@@ -390,11 +392,16 @@ out vec3 vSpotLightDirectionView1; // vetor de direção do spot light 1 em view
 out vec3 vSpotLight2;      // Vetor em viwespace do aposition até o spot light 2
 out vec3 vSpotLightDirectionView2; // vetor de direção do spot light 2 em view space
 
+out float visibilidade;
+
+const float densidade = 0.02;
+const float gradiente = 2.0;
+
 void main() {
     mat4 modelView = uView * uModel;
-    gl_Position = uPerspective * modelView * vec4(aPosition, 1);
-    vNormal = mat3(uInverseTranspose) * aNormal;
     vec4 pos = modelView * vec4(aPosition, 1);
+    gl_Position = uPerspective * pos;
+    vNormal = mat3(uInverseTranspose) * aNormal;
     vLight = (uView * uLuzPos - pos).xyz;
     vView = -(pos.xyz);
 
@@ -404,6 +411,10 @@ void main() {
 
     vSpotLight2 = (uView * uSpotLightPos2 - pos).xyz; 
     vSpotLightDirectionView2 = normalize(mat3(uView) * uSpotLightDirectionWorld2); // Direção do spot light 2 em view space
+
+    float distancia = length(pos.xyz);
+    visibilidade = exp(-pow(distancia * densidade, gradiente));
+    visibilidade = clamp(visibilidade, 0.0, 1.0);
 }
 `;
 
@@ -435,6 +446,9 @@ uniform vec4 uCorDifusaoSpot;   // Cor Difusa = cor da lanterna * cor do objeto
 uniform vec4 uCorEspecularSpot; // Cor Especular = cor da lanterna * cor do objeto
 uniform float uInnerCutoff;
 uniform float uOuterCutoff;
+
+in float visibilidade;
+uniform vec4 uCorNeblina;
 
 out vec4 corSaida;
 void main() {
@@ -490,5 +504,7 @@ void main() {
     corSaida = uCorAmbiente + cor_point_light + spotLightTotal1 + spotLightTotal2;
     //corSaida = spotLightTotal2;
     corSaida.a = 1.0;
+
+    corSaida = mix(uCorNeblina, corSaida, visibilidade);
 }
 `;
