@@ -86,7 +86,7 @@ const CAM = {
     near   : 0.1,
     far    : 500,
 };
-
+let gJacolidiu = false;
 let gPausado = false;
 let caminhao;
 
@@ -310,10 +310,11 @@ function render_auxiliar(){
 }
 
 function render(delta) {
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    atualiza_camera(delta)
-    atualiza_farol_caminhao(delta);
-    if (verificaColisaoCaminhaoCarros(caminhao, gObjetos)) {
+    if (gJacolidiu){
+        return
+    }
+    if (!gJacolidiu && verificaColisaoCaminhaoCarros(caminhao, gObjetos)) {
+        gJacolidiu = true;
         console.log("Colisão detectada!");
         gl.clearColor(1, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -326,6 +327,10 @@ function render(delta) {
         botao_pause.disabled = true;
         return;
     }
+
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    atualiza_camera(delta)
+    atualiza_farol_caminhao(delta);
     for (let i = 0; i < gObjetos.length; i++) {
         gObjetos[i].atualiza_posicao_orientacao(delta);
         gObjetos[i].atualiza_model();
@@ -351,36 +356,19 @@ function atualiza_camera(delta) {
 
 
     if (modo_camera === 1) {
-        // ==========================================================
-        // ===== NOVA LÓGICA DE CÂMERA ORBITAL PARA O MODO 1 =====
-        // ==========================================================
 
-        // 1. O alvo ('at') é a posição do caminhão.
         const at = caminhao.posicao;
-
-        // 2. Define a distância inicial da câmera com base nos parâmetros do modo 1.
         const offset_inicial = vec4(camera_modo.para_tras, camera_modo.altura, camera_modo.para_lado, 0);
 
-        // 3. Cria a matriz de rotação da câmera com base na entrada do usuário (Pitch e Yaw).
-        //    (Esta parte assume que você está usando a versão de moveCamera que corrigiu os controles)
         const orientacao_camera = camera_modo.orientacao;
         const R_camera = mult(rotateY(orientacao_camera[1]), rotateX(orientacao_camera[0]));
-
-        // 4. Rotaciona o vetor de distância para obter a posição correta da câmera.
         const offset_rotacionado = mult(R_camera, offset_inicial);
-        
-        // 5. A posição da câmera ('eye') é a posição do caminhão somada ao vetor de distância rotacionado.
         const eye = add(at, vec3(offset_rotacionado[0], offset_rotacionado[1], offset_rotacionado[2]));
 
-        // 6. Define a matriz de visão final para o modo 1.
         gCtx.view = lookAt(eye, at, up_resultante3);
 
     } else {
-        // ================================================================
-        // ===== SUA LÓGICA ORIGINAL PRESERVADA PARA OS MODOS 0 E 2 =====
-        // ================================================================
 
-        // Nota: A variável 'orientacao' foi renomeada para 'caminhao_orientacao' para clareza.
         let R = mult(rotateZ(caminhao_orientacao[2]), mult(rotateY(caminhao_orientacao[1]), rotateX(caminhao_orientacao[0])));
         let eixo_x = vec4(1, 0, 0, 0)
 
@@ -415,7 +403,6 @@ function atualiza_camera(delta) {
         }
         let at = add(P, mult(r + a, direcao_rotacionada3));
         
-        // A variável 'up_resultante3' já foi calculada no início da função.
         gCtx.view = lookAt(eye, at, up_resultante3);
     }
 }

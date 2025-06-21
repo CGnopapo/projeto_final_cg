@@ -94,7 +94,7 @@ function Caminhao(posicao, orientacao, velo_trans, vel_rotacao, escala, cor_ambi
         vec3(2.5, offsetY, 0.7),
     ];
 
-    //
+    
     for (const pos of posRodas) {
         this.partes.push(new ParteCilindrica(
             pos,
@@ -406,19 +406,32 @@ function geraCilindro(pos, nor, raio, altura, segmentos) {
 }
 
 function getAABBBaseCaminhao(caminhao) {
-    const escala = caminhao.escala || vec3(1,1,1);
-    const centro = caminhao.posicao;
-    const metade = [
-        1.7 * escala[0] / 2,
-        0.75 * escala[1] / 2,
-        1.5 * escala[2] / 2
-    ];
+    const escala = caminhao.escala || vec3(1, 1, 1);
+    const origemCaminhao = caminhao.posicao;
+
+    // Coordenadas locais (relativas à origem do objeto) que englobam
+    // tanto a cabine quanto a carga do caminhão.
+    const minLocal = vec3(-0.85, -0.375, -0.75);
+    const maxLocal = vec3(7.9, 1.65, 0.75);
+
+    // Calcula os pontos min e max no espaço do mundo, aplicando a escala
+    // e somando a posição de origem do caminhão.
+    const minMundo = vec3(
+        origemCaminhao[0] + minLocal[0] * escala[0],
+        origemCaminhao[1] + minLocal[1] * escala[1],
+        origemCaminhao[2] + minLocal[2] * escala[2]
+    );
+    const maxMundo = vec3(
+        origemCaminhao[0] + maxLocal[0] * escala[0],
+        origemCaminhao[1] + maxLocal[1] * escala[1],
+        origemCaminhao[2] + maxLocal[2] * escala[2]
+    );
+
     return {
-        min: [centro[0] - metade[0], centro[1] - metade[1], centro[2] - metade[2]],
-        max: [centro[0] + metade[0], centro[1] + metade[1], centro[2] + metade[2]]
+        min: minMundo,
+        max: maxMundo
     };
 }
-
 function getAABBBaseCarro(carro) {
     // Base do carro: posição relativa ao centro (0,0,0), escala (2.0, 0.5, 1.0)
     const escala = carro.escala || vec3(1,1,1);
@@ -444,12 +457,18 @@ function aabbColide(a, b) {
 function verificaColisaoCaminhaoCarros(caminhao, gObjetos) {
     const aabbCaminhao = getAABBBaseCaminhao(caminhao);
     for (let objeto of gObjetos) {
-        if (objeto instanceof Carro){ 
+        if (objeto instanceof Carro) {
             const aabbCarro = getAABBBaseCarro(objeto);
             if (aabbColide(aabbCaminhao, aabbCarro)) {
-                return true; // Colidiu!
+                return true; 
+            }
+        }
+        if (objeto instanceof Caminhao && objeto !== caminhao) {
+            const aabbOutroCaminhao = getAABBBaseCaminhao(objeto);
+            if (aabbColide(aabbCaminhao, aabbOutroCaminhao)) {
+                return true; 
             }
         }
     }
-    return false; // Nenhuma colisão
+    return false; 
 }
