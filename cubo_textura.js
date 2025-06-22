@@ -48,7 +48,7 @@ out vec2 vTexCoord;
 
 out float visibilidade;
 
-const float densidade = 0.007;
+const float densidade = 0.03;
 const float gradiente = 3.0;
 
 void main() {
@@ -193,10 +193,10 @@ function Cubo_textura(posicao,orientacao,velo_trans, vel_rotacao, escala, cor_am
 
         // Configura textura
         if (e_da_internet){
-            configureTexturaDaURL(this.textura);
+            configureTexturaDaURL(this.textura, 0);
         }
         else {
-            configureTextura(this.textura);
+            configureTextura(this.textura, 0);
         }
         // === Criação do VAO ===
         this.vao = gl.createVertexArray();
@@ -266,6 +266,7 @@ function Cubo_textura(posicao,orientacao,velo_trans, vel_rotacao, escala, cor_am
         gl.uniform4fv(gShaderTextura.uCorDif, mult(LUZ.dif, this.cor_difusao));
         gl.uniform4fv(gShaderTextura.uCorEsp, LUZ.esp);
         gl.uniform1f(gShaderTextura.uAlfaEsp, this.alpha_especular);
+        gl.uniform1i(gl.getUniformLocation(gShaderTextura.program, "uTextureMap"), 0);
 
         gl.bindVertexArray(this.vao);
         gl.drawArrays(gl.TRIANGLES, 0, this.pos.length);
@@ -306,9 +307,9 @@ function quad_textura(pos, nor,textura_st, vert, a, b, c, d) {
     textura_st.push(gTextura_st[3]);
 };
 
-function configureTextura(img) {
+function configureTextura(img, id) {
     var texture = gl.createTexture();
-    gl.activeTexture(gl.TEXTURE0);
+    gl.activeTexture(gl.TEXTURE0 + id);
     gl.bindTexture(gl.TEXTURE_2D, texture);
 
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
@@ -321,11 +322,11 @@ function configureTextura(img) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
 }
 
-function configureTexturaDaURL(url) {
+function configureTexturaDaURL(url, id) {
     // cria a textura
     var texture = gl.createTexture();
     // seleciona a unidade TEXTURE0
-    gl.activeTexture(gl.TEXTURE0);
+    gl.activeTexture(gl.TEXTURE0 + id);
     // ativa a textura
     gl.bindTexture(gl.TEXTURE_2D, texture);
 

@@ -28,8 +28,8 @@ function Skybox() {
 
     out vec4 corSaida;
 
-    const float limiteInferior = 0.0;
-    const float limiteSuperior = 0.05;
+    const float limiteInferior = 0.05;
+    const float limiteSuperior = 0.2;
 
     void main() {
         vec4 t = uViewDirectionProjectionInverse * vPosition;
@@ -72,17 +72,16 @@ function Skybox() {
 
         const bufVertices = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, bufVertices);
-        console.log(flatten(VERTICES));
         gl.bufferData(gl.ARRAY_BUFFER, flatten(VERTICES), gl.STATIC_DRAW);
 
         gl.vertexAttribPointer(this.attribs.position, 2, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(this.attribs.position);
 
         let diaInfos = this.geraInfosFacesSkybox('skybox_day');
-        this.carregaInfosFacesSkybox(diaInfos, 0);
+        this.carregaInfosFacesSkybox(diaInfos, 4);
 
         let noiteInfos = this.geraInfosFacesSkybox('skybox_night');
-        this.carregaInfosFacesSkybox(noiteInfos, 1);
+        this.carregaInfosFacesSkybox(noiteInfos, 5);
 
         gl.bindVertexArray(null);
     };
@@ -106,8 +105,8 @@ function Skybox() {
         );
 
         // Tell the shader to use texture unit 0 for u_skybox
-        gl.uniform1i(this.attribs.skyboxDia, 0);
-        gl.uniform1i(this.attribs.skyboxNoite, 1);
+        gl.uniform1i(this.attribs.skyboxDia, 4);
+        gl.uniform1i(this.attribs.skyboxNoite, 5);
 
         let fator;
         if (tempo < 12000) {
@@ -125,7 +124,7 @@ function Skybox() {
         // console.log(fator, tempo);
 
         gl.uniform1f(this.attribs.fatorDiaNoite, fator);
-        gl.uniform3fv(this.attribs.corNeblina, vec3(.5, 0, .5));
+        gl.uniform3fv(this.attribs.corNeblina, vec3(.6, .78, .76));
 
         // let our quad pass the depth test at 1.0
         gl.depthFunc(gl.LEQUAL);

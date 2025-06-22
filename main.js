@@ -174,6 +174,10 @@ function main() {
     );
     pista.init();
     pista.adiciona_ao_cenario();
+
+    let floresta = new Floresta(10, 60);
+    floresta.init();
+    floresta.adiciona_ao_cenario();
     
     init_farol_caminhao()
     render_auxiliar();
