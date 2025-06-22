@@ -295,16 +295,29 @@ function configureTextura(img, unidade) {
     gl.activeTexture(gl.TEXTURE0 + (unidade || 0));
     gl.bindTexture(gl.TEXTURE_2D, texture);
 
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-    gl.generateMipmap(gl.TEXTURE_2D);
+    // Coloca um pixel azul temporário na textura para evitar erros enquanto a imagem final carrega.
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+        new Uint8Array([0, 0, 255, 255]));
 
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    const carregarTextura = () => {
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    };
 
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    // Se a imagem já estiver carregada (ex: vinda do cache), usa-a imediatamente.
+    // Caso contrário, adiciona um evento que chamará a função quando o carregamento terminar.
+    if (img.complete) {
+        carregarTextura();
+    } else {
+        img.addEventListener('load', carregarTextura);
+    }
 
-    return texture; // retorne o objeto de textura se quiser guardar para usar depois
+    return texture; // Retorna o objeto de textura.
 }
 
 function configureTexturaDaURL(url) {

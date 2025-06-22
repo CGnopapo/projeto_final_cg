@@ -151,6 +151,20 @@ function main() {
     carro2.init()
     carro2.adiciona_ao_cenario();
 
+
+
+    let textura_painel = new Image();
+    textura_painel.src = "painel.png";
+
+    let textura_porta_dir = new Image();
+    textura_porta_dir.src = "porta_direita.png";
+
+    let textura_porta_esq = new Image();
+    textura_porta_esq.src = "porta_esquerda.png";
+
+
+
+
     caminhao = new Caminhao(
         vec3(0, 1, 0),              // posição
         vec3(0, 0, 0),              // orientação
@@ -159,8 +173,16 @@ function main() {
         vec3(1, 1, 1),              // escala
         vec4(1, 1, 1, 1.0),   // cor ambiente
         vec4(1, 1, 1, 1.0),   // cor difusa
-        20                          // alpha especular
+        20 ,                         // alpha especular
+        textura_painel,
+        textura_porta_dir,
+        textura_porta_esq
     );
+
+
+
+
+
 
 
     caminhao.init();
