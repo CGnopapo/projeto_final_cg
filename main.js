@@ -101,6 +101,9 @@ var farol_caminhao={
     outerAngleDegrees : 3, // Ângulo externo do spot light
 
     pos2: vec4(0,-0.5,0.65,1),
+    constant:  1.0,
+    linear:    0.05,   // Quanto menor, mais longe o alcance do spot light
+    quadratic: 0.01   // igual
 }
 
 function main() {
@@ -222,6 +225,10 @@ function init_farol_caminhao() {
     gl.uniform4fv(gShader.uCorEspecularSpot, farol_caminhao.CorEspecularSpotLoc);
     gl.uniform1f(gShader.uInnerCutoff, Math.cos(radians(farol_caminhao.innerAngleDegrees)));
     gl.uniform1f(gShader.uOuterCutoff, Math.cos(radians(farol_caminhao.outerAngleDegrees)));
+
+    gl.uniform1f(gShader.uConstant, farol_caminhao.constant);
+    gl.uniform1f(gShader.uLinear, farol_caminhao.linear);
+    gl.uniform1f(gShader.uQuadratic, farol_caminhao.quadratic);
 }
 
 
@@ -452,32 +459,39 @@ function crieShaders() {
     gShader.uInnerCutoff = gl.getUniformLocation(gShader.program, "uInnerCutoff");
     gShader.uOuterCutoff = gl.getUniformLocation(gShader.program, "uOuterCutoff");
 
+
+    gShader.uConstant = gl.getUniformLocation(gShader.program, "uConstant");
+    gShader.uLinear = gl.getUniformLocation(gShader.program, "uLinear");
+    gShader.uQuadratic = gl.getUniformLocation(gShader.program, "uQuadratic");
+
 };
+
+// Em projeto_final_cg/main.js
 
 var gVertexShaderSrc = `#version 300 es
 in  vec3 aPosition;
 in  vec3 aNormal;
-uniform vec3 uSpotLightDirectionWorld1; // Direção do spot light 1 (em World Space)
-uniform vec4 uSpotLightPos1; // Posição do spot light 1 (em World Space) 
-
-uniform vec3 uSpotLightDirectionWorld2; // Direção do spot light 2 (em World Space)
-uniform vec4 uSpotLightPos2; // Posição do spot light 2 (em World Space) 
+uniform vec3 uSpotLightDirectionWorld1;
+uniform vec4 uSpotLightPos1;
+uniform vec3 uSpotLightDirectionWorld2;
+uniform vec4 uSpotLightPos2;
 
 uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uPerspective;
 uniform mat4 uInverseTranspose;
 uniform vec4 uLuzPos;
+
 out vec3 vNormal;
 out vec3 vLight;
 out vec3 vView;
+out vec3 vSpotLight1;
+out vec3 vSpotLightDirectionView1;
+out vec3 vSpotLight2;
+out vec3 vSpotLightDirectionView2;
 
-out vec3 vSpotLight1;      // Vetor em viwespace do aposition até o spot light 1
-out vec3 vSpotLightDirectionView1; // vetor de direção do spot light 1 em view space
-
-
-out vec3 vSpotLight2;      // Vetor em viwespace do aposition até o spot light 2
-out vec3 vSpotLightDirectionView2; // vetor de direção do spot light 2 em view space
+out float vSpotLightDistance1; // Distância do fragmento para o farol 1
+out float vSpotLightDistance2; // Distância do fragmento para o farol 2
 
 void main() {
     mat4 modelView = uView * uModel;
@@ -488,13 +502,16 @@ void main() {
     vView = -(pos.xyz);
 
     vSpotLight1 = (uView * uSpotLightPos1 - pos).xyz; 
-    vSpotLightDirectionView1 = normalize(mat3(uView) * uSpotLightDirectionWorld1); // Direção do spot light 1 em view space
-
+    vSpotLightDistance1 = length(vSpotLight1);
+    vSpotLightDirectionView1 = normalize(mat3(uView) * uSpotLightDirectionWorld1);
 
     vSpotLight2 = (uView * uSpotLightPos2 - pos).xyz; 
-    vSpotLightDirectionView2 = normalize(mat3(uView) * uSpotLightDirectionWorld2); // Direção do spot light 2 em view space
+    vSpotLightDistance2 = length(vSpotLight2);
+    vSpotLightDirectionView2 = normalize(mat3(uView) * uSpotLightDirectionWorld2);
 }
 `;
+
+// Em projeto_final_cg/main.js
 
 var gFragmentShaderSrc = `#version 300 es
 precision highp float;
@@ -506,26 +523,25 @@ uniform vec4 uCorDifusao;
 uniform vec4 uCorEspecular;
 uniform float uAlfaEsp;
 
-// Spot light in, vetor do aPosition ate a posição do spot light
-in vec3 vSpotLight1;  
-
-// Spot light direction, vetor de direção do spot light em view space
+in vec3 vSpotLight1;
 in vec3 vSpotLightDirectionView1;
-
-
-// Spot light in, vetor do aPosition ate a posição do spot light
-in vec3 vSpotLight2;  
-
-// Spot light direction, vetor de direção do spot light em view space
+in vec3 vSpotLight2;
 in vec3 vSpotLightDirectionView2;
 
-// Spot light uniforms
-uniform vec4 uCorDifusaoSpot;   // Cor Difusa = cor da lanterna * cor do objeto
-uniform vec4 uCorEspecularSpot; // Cor Especular = cor da lanterna * cor do objeto
+uniform vec4 uCorDifusaoSpot;
+uniform vec4 uCorEspecularSpot;
 uniform float uInnerCutoff;
 uniform float uOuterCutoff;
 
+in float vSpotLightDistance1;
+in float vSpotLightDistance2;
+
+uniform float uConstant;
+uniform float uLinear;
+uniform float uQuadratic;
+
 out vec4 corSaida;
+
 void main() {
     vec3 normalV = normalize(vNormal);
     vec3 lightV = normalize(vLight);
@@ -538,15 +554,14 @@ void main() {
     if (kd > 0.0) {
         especular = ks * uCorEspecular;
     }
-    vec4 cor_point_light= difusao + especular;
+    vec4 cor_point_light = difusao + especular;
 
-    //////// Cálculo do spot light 1 ////////
 
+    //////// Cálculo do spot light 1 com atenuação ////////
+    float attenuation1 = 1.0 / (uConstant + uLinear * vSpotLightDistance1 + uQuadratic * (vSpotLightDistance1 * vSpotLightDistance1));
     vec3 spotLightV1 = normalize(vSpotLight1);
     float angle1 = dot(-spotLightV1, vSpotLightDirectionView1);
     float spotFactor1 = smoothstep(uOuterCutoff, uInnerCutoff, angle1);
-
-
     vec3 spotHalfV1 = normalize(spotLightV1 + viewV);
     float kd_spot1 = max(0.0, dot(normalV, spotLightV1));
     vec4 difusaoSpot1 = kd_spot1 * uCorDifusaoSpot;
@@ -555,15 +570,13 @@ void main() {
     if (kd_spot1 > 0.0) {
         especularSpot1 = ks_spot1 * uCorEspecularSpot;
     }
-    vec4 spotLightTotal1 = (difusaoSpot1 + especularSpot1) * spotFactor1;
+    vec4 spotLightTotal1 = (difusaoSpot1 + especularSpot1) * spotFactor1 * attenuation1; // Multiplica pela atenuação
 
-    ////////// Cálculo do spot light 2 /////////
-
+    ////////// Cálculo do spot light 2 com atenuação /////////
+    float attenuation2 = 1.0 / (uConstant + uLinear * vSpotLightDistance2 + uQuadratic * (vSpotLightDistance2 * vSpotLightDistance2));
     vec3 spotLightV2 = normalize(vSpotLight2);
     float angle2 = dot(-spotLightV2, vSpotLightDirectionView2);
     float spotFactor2 = smoothstep(uOuterCutoff, uInnerCutoff, angle2);
-
-
     vec3 spotHalfV2 = normalize(spotLightV2 + viewV);
     float kd_spot2 = max(0.0, dot(normalV, spotLightV2));
     vec4 difusaoSpot2 = kd_spot2 * uCorDifusaoSpot;
@@ -572,12 +585,9 @@ void main() {
     if (kd_spot2 > 0.0) {
         especularSpot2 = ks_spot2 * uCorEspecularSpot;
     }
-    vec4 spotLightTotal2 = (difusaoSpot2 + especularSpot2) * spotFactor2;
-
-    ////////////////////////////////////
+    vec4 spotLightTotal2 = (difusaoSpot2 + especularSpot2) * spotFactor2 * attenuation2; // Multiplica pela atenuação
 
     corSaida = uCorAmbiente + cor_point_light + spotLightTotal1 + spotLightTotal2;
-    //corSaida = spotLightTotal2;
     corSaida.a = 1.0;
 }
 `;
