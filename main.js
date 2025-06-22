@@ -46,8 +46,6 @@ var gCamera_modo0 = {
     eye: vec3(-1, 0, 0),
     at : vec3(0, 0, -2),
     up : vec3(0, 1, 0),
-    vang: 0,
-    hang: 0,
     altura: 0.7,
     para_tras: 6.605,
     para_lado: 0,
@@ -58,8 +56,6 @@ var gCamera_modo1 = {
     eye: vec3(1, 1, 1),
     at : vec3(-1, 0, 0),
     up : vec3(0, 1, 0),
-    vang: 0,
-    hang: 0,
     altura: 10,
     para_tras: 60,
     para_lado: -10,
@@ -70,8 +66,6 @@ var gCamera_modo2 = {
     eye: vec3(-1, 0, 0),
     at : vec3(0, 0, 0),
     up : vec3(0, 1, 0),
-    vang: 0,
-    hang: 0,
     altura: 0.1,
     para_tras: 14,
     para_lado: 0,
@@ -91,19 +85,18 @@ let gPausado = false;
 let caminhao;
 
 
-////!!!!!!!!!! falta atenuação do spot light
 var farol_caminhao={
     pos1: vec4(0,-0.5,-0.65,1), // posição da frente do caminhão
-    spotlightDirection :vec3(-1,0,0), // Direção do spot light em World Space (deveria ser ajustada conforme o modelo do caminhão)
-    CorDifusaoSpotLoc : vec4(2, 2, 0, 1.0), // Cor Difusa do spot light
-    CorEspecularSpotLoc : vec4(2, 2, 0, 1.0), // Cor Especular do spot light
-    innerAngleDegrees : 0.1, // Ângulo interno do spot light
-    outerAngleDegrees : 3, // Ângulo externo do spot light
+    uSpot_light_direcao :vec3(-1,0,0), // Direção do spot light em World Space 
+    uCor_difusao_spotlight_loc : vec4(2, 2, 0, 1.0), // Cor Difusa do spot light
+    uCor_especular_spotlight_loc : vec4(2, 2, 0, 1.0), // Cor Especular do spot light
+    angulo_interno : 0.1, // Ângulo interno do spot light
+    angulo_externo : 3, // Ângulo externo do spot light
 
     pos2: vec4(0,-0.5,0.65,1),
-    constant:  1.0,
+    constante:  1.0,
     linear:    0.05,   // Quanto menor, mais longe o alcance do spot light
-    quadratic: 0.01   // igual
+    quadratico: 0.01   // igual
 }
 
 function main() {
@@ -127,10 +120,10 @@ function main() {
     gCtx.view = lookAt(gcamera_modos[modo_camera].eye,gcamera_modos[modo_camera].at,gcamera_modos[modo_camera].up)
 
     let carro = new Carro(
-        vec3(-10, 0.6, 0),              // posição
+        vec3(-10, 0.6, 0),          // posição
         vec3(0, 0, 0),              // orientação
-        vec3(-10, 0, 0),           // velocidade translacional
-        vec3(0, 0, 0),            // velocidade rotacional
+        vec3(-10, 0, 0),            // velocidade translacional
+        vec3(0, 0, 0),              // velocidade rotacional
         vec3(1, 1, 1),              // escala
         vec4(0.5, 0.5, 0.5, 1.0),   // cor ambiente
         vec4(0.5, 0.5, 0.5, 1.0),   // cor difusa
@@ -139,7 +132,7 @@ function main() {
     carro.init()
     carro.adiciona_ao_cenario();
     let carro2 = new Carro(
-        vec3(14, 0.6, 0),              // posição
+        vec3(14, 0.6, 0),             // posição
         vec3(0, 0, 0),              // orientação
         vec3(0, 0, 0),           // velocidade translacional
         vec3(0, 0, 0),            // velocidade rotacional
@@ -180,15 +173,12 @@ function main() {
     );
 
 
-
-
-
-
-
     caminhao.init();
     caminhao.adiciona_ao_cenario();
-        // Cria a pista infinita
     
+
+
+
     let pista = new Pista(
         60, // quantidade de cubos
         12, // largura da pista
@@ -204,53 +194,46 @@ function main() {
     let textura_terreno = new Image();
     textura_terreno.src = "b.jpg";
 
-    const larguraPista = 12.0;
-    const larguraFaixaTerreno = 300.0; // Define a largura do terreno em cada lado da pista
+    const largura_pista = 12.0;
+    const largura_faixa_terreno = 300.0; 
 
-    // Cria um gerenciador para o lado direito da pista
-    let gerenciadorDireito = new GerenciadorTerreno(textura_terreno, 'direito', larguraPista, larguraFaixaTerreno);
-    gerenciadorDireito.init();
-    gerenciadorDireito.adiciona_ao_cenario();
+    // Cria um gerenciador de terreno para o lado direito da pista
+    let gerenciador_lado_direito = new Gerenciador_terreno(textura_terreno, 'direito', largura_pista, largura_faixa_terreno);
+    gerenciador_lado_direito.init();
+    gerenciador_lado_direito.adiciona_ao_cenario();
 
-    // Cria um gerenciador para o lado esquerdo da pista
-    let gerenciadorEsquerdo = new GerenciadorTerreno(textura_terreno, 'esquerdo', larguraPista, larguraFaixaTerreno);
-    gerenciadorEsquerdo.init();
-    gerenciadorEsquerdo.adiciona_ao_cenario();
+    // Cria um gerenciador de terreno para o lado esquerdo da pista
+    let gerenciador_lado_esquerdo = new Gerenciador_terreno(textura_terreno, 'esquerdo', largura_pista, largura_faixa_terreno);
+    gerenciador_lado_esquerdo.init();
+    gerenciador_lado_esquerdo.adiciona_ao_cenario();
 
     render_auxiliar();
 }
 
 function atualiza_farol_caminhao(delta) {
-    // Atualiza orientação do caminhão
     let orientacao = add(caminhao.orientacao, mult(delta, caminhao.vel_rotacao));
     let R = mult(rotateZ(orientacao[2]), mult(rotateY(orientacao[1]), rotateX(orientacao[0])));
 
-
-    // Posição global do farol
     let pos_global_farol1 = add(mult(R, farol_caminhao.pos1), vec4(caminhao.posicao[0], caminhao.posicao[1], caminhao.posicao[2], 1));
     let pos_global_farol2 = add(mult(R, farol_caminhao.pos2), vec4(caminhao.posicao[0], caminhao.posicao[1], caminhao.posicao[2], 1));
 
-
-    // Atualiza a posição do farol no objeto global
-
-    gl.uniform4fv(gShader.uSpotLightPos1, [pos_global_farol1[0], pos_global_farol1[1], pos_global_farol1[2], 1.0])
-    gl.uniform4fv(gShader.uSpotLightPos2, [pos_global_farol2[0], pos_global_farol2[1], pos_global_farol2[2], 1.0])
-
+    gl.uniform4fv(gShader.uSpotlight_pos1, [pos_global_farol1[0], pos_global_farol1[1], pos_global_farol1[2], 1.0])
+    gl.uniform4fv(gShader.uSpotlight_pos2, [pos_global_farol2[0], pos_global_farol2[1], pos_global_farol2[2], 1.0])
     
 }
 
 function init_farol_caminhao() {
 
-    gl.uniform3fv(gShader.uSpotLightDirectionWorld1, farol_caminhao.spotlightDirection);
-    gl.uniform3fv(gShader.uSpotLightDirectionWorld2, farol_caminhao.spotlightDirection);
-    gl.uniform4fv(gShader.uCorDifusaoSpot, farol_caminhao.CorDifusaoSpotLoc);
-    gl.uniform4fv(gShader.uCorEspecularSpot, farol_caminhao.CorEspecularSpotLoc);
-    gl.uniform1f(gShader.uInnerCutoff, Math.cos(radians(farol_caminhao.innerAngleDegrees)));
-    gl.uniform1f(gShader.uOuterCutoff, Math.cos(radians(farol_caminhao.outerAngleDegrees)));
+    gl.uniform3fv(gShader.uSpot_light_direcao_mundo_1, farol_caminhao.uSpot_light_direcao);
+    gl.uniform3fv(gShader.uSpot_light_direcao_mundo_2, farol_caminhao.uSpot_light_direcao);
+    gl.uniform4fv(gShader.uCor_difusao_spotlight, farol_caminhao.uCor_difusao_spotlight_loc);
+    gl.uniform4fv(gShader.uCor_especular_spotlight, farol_caminhao.uCor_especular_spotlight_loc);
+    gl.uniform1f(gShader.uCorte_interno, Math.cos(radians(farol_caminhao.angulo_interno)));
+    gl.uniform1f(gShader.uCorte_externo, Math.cos(radians(farol_caminhao.angulo_externo)));
 
-    gl.uniform1f(gShader.uConstant, farol_caminhao.constant);
+    gl.uniform1f(gShader.uConstante, farol_caminhao.constante);
     gl.uniform1f(gShader.uLinear, farol_caminhao.linear);
-    gl.uniform1f(gShader.uQuadratic, farol_caminhao.quadratic);
+    gl.uniform1f(gShader.Quadratico, farol_caminhao.quadratico);
 }
 
 
@@ -342,7 +325,7 @@ function render(delta) {
     if (gJacolidiu){
         return
     }
-    if (!gJacolidiu && verificaColisaoCaminhaoCarros(caminhao, gObjetos)) {
+    if (!gJacolidiu && verifica_colisao(caminhao, gObjetos)) {
         gJacolidiu = true;
         console.log("Colisão detectada!");
         gl.clearColor(1, 0, 0, 1);
@@ -373,26 +356,24 @@ function render(delta) {
 
 function atualiza_camera(delta) {
 
-    // --- Lógica e Variáveis Comuns a Todos os Modos ---
     const caminhao_orientacao = add(caminhao.orientacao, mult(delta, caminhao.vel_rotacao));
     const camera_modo = gcamera_modos[modo_camera];
 
-    // O vetor 'up' da câmera deve acompanhar o rolamento (eixo Z) do caminhão
-    const R_caminhao_roll = rotateZ(caminhao_orientacao[2]);
+    const R_caminhao = rotateZ(caminhao_orientacao[2]);
     const up_base = vec4(camera_modo.up[0], camera_modo.up[1], camera_modo.up[2], 0);
-    const up_resultante = mult(R_caminhao_roll, up_base);
+    const up_resultante = mult(R_caminhao, up_base);
     const up_resultante3 = vec3(up_resultante[0], up_resultante[1], up_resultante[2]);
 
 
     if (modo_camera === 1) {
 
         const at = caminhao.posicao;
-        const offset_inicial = vec4(camera_modo.para_tras, camera_modo.altura, camera_modo.para_lado, 0);
+        const a = vec4(camera_modo.para_tras, camera_modo.altura, camera_modo.para_lado, 0);
 
         const orientacao_camera = camera_modo.orientacao;
         const R_camera = mult(rotateY(orientacao_camera[1]), rotateX(orientacao_camera[0]));
-        const offset_rotacionado = mult(R_camera, offset_inicial);
-        const eye = add(at, vec3(offset_rotacionado[0], offset_rotacionado[1], offset_rotacionado[2]));
+        const a_rotacionado = mult(R_camera, a);
+        const eye = add(at, vec3(a_rotacionado[0], a_rotacionado[1], a_rotacionado[2]));
 
         gCtx.view = lookAt(eye, at, up_resultante3);
 
@@ -468,35 +449,30 @@ function crieShaders() {
     gShader.uAlfaEsp = gl.getUniformLocation(gShader.program, "uAlfaEsp");
 
 
-    // Obtem localizações dos uniforms da spot light
-    // Uniforms do VERTEX SHADER
-    gShader.uSpotLightPos1 = gl.getUniformLocation(gShader.program, "uSpotLightPos1");
-    gShader.uSpotLightDirectionWorld1 = gl.getUniformLocation(gShader.program, "uSpotLightDirectionWorld1");
-    gShader.uSpotLightPos2 = gl.getUniformLocation(gShader.program, "uSpotLightPos2");
-    gShader.uSpotLightDirectionWorld2 = gl.getUniformLocation(gShader.program, "uSpotLightDirectionWorld2");
 
-    // Uniforms do FRAGMENT SHADER
-    gShader.uCorDifusaoSpot = gl.getUniformLocation(gShader.program, "uCorDifusaoSpot");
-    gShader.uCorEspecularSpot = gl.getUniformLocation(gShader.program, "uCorEspecularSpot");
-    gShader.uInnerCutoff = gl.getUniformLocation(gShader.program, "uInnerCutoff");
-    gShader.uOuterCutoff = gl.getUniformLocation(gShader.program, "uOuterCutoff");
+    gShader.uSpotlight_pos1 = gl.getUniformLocation(gShader.program, "uSpotlight_pos1");
+    gShader.uSpot_light_direcao_mundo_1 = gl.getUniformLocation(gShader.program, "uSpot_light_direcao_mundo_1");
+    gShader.uSpotlight_pos2 = gl.getUniformLocation(gShader.program, "uSpotlight_pos2");
+    gShader.uSpot_light_direcao_mundo_2 = gl.getUniformLocation(gShader.program, "uSpot_light_direcao_mundo_2");
 
+    gShader.uCor_difusao_spotlight = gl.getUniformLocation(gShader.program, "uCor_difusao_spotlight");
+    gShader.uCor_especular_spotlight = gl.getUniformLocation(gShader.program, "uCor_especular_spotlight");
+    gShader.uCorte_interno = gl.getUniformLocation(gShader.program, "uCorte_interno");
+    gShader.uCorte_externo = gl.getUniformLocation(gShader.program, "uCorte_externo");
 
-    gShader.uConstant = gl.getUniformLocation(gShader.program, "uConstant");
+    gShader.uConstante = gl.getUniformLocation(gShader.program, "uConstante");
     gShader.uLinear = gl.getUniformLocation(gShader.program, "uLinear");
-    gShader.uQuadratic = gl.getUniformLocation(gShader.program, "uQuadratic");
+    gShader.Quadratico = gl.getUniformLocation(gShader.program, "Quadratico");
 
 };
-
-// Em projeto_final_cg/main.js
 
 var gVertexShaderSrc = `#version 300 es
 in  vec3 aPosition;
 in  vec3 aNormal;
-uniform vec3 uSpotLightDirectionWorld1;
-uniform vec4 uSpotLightPos1;
-uniform vec3 uSpotLightDirectionWorld2;
-uniform vec4 uSpotLightPos2;
+uniform vec3 uSpot_light_direcao_mundo_1;
+uniform vec4 uSpotlight_pos1;
+uniform vec3 uSpot_light_direcao_mundo_2;
+uniform vec4 uSpotlight_pos2;
 
 uniform mat4 uModel;
 uniform mat4 uView;
@@ -507,13 +483,13 @@ uniform vec4 uLuzPos;
 out vec3 vNormal;
 out vec3 vLight;
 out vec3 vView;
-out vec3 vSpotLight1;
-out vec3 vSpotLightDirectionView1;
-out vec3 vSpotLight2;
-out vec3 vSpotLightDirectionView2;
+out vec3 vSpotlight1;
+out vec3 vSpotlight_direcao_view1;
+out vec3 vSpotlight2;
+out vec3 vSpotlight_direcao_view2;
 
-out float vSpotLightDistance1; // Distância do fragmento para o farol 1
-out float vSpotLightDistance2; // Distância do fragmento para o farol 2
+out float vSpotlight_distancia1; // Distância do fragmento para o farol 1
+out float vSpotlight_distancia2; // Distância do fragmento para o farol 2
 
 void main() {
     mat4 modelView = uView * uModel;
@@ -523,17 +499,16 @@ void main() {
     vLight = (uView * uLuzPos - pos).xyz;
     vView = -(pos.xyz);
 
-    vSpotLight1 = (uView * uSpotLightPos1 - pos).xyz; 
-    vSpotLightDistance1 = length(vSpotLight1);
-    vSpotLightDirectionView1 = normalize(mat3(uView) * uSpotLightDirectionWorld1);
+    vSpotlight1 = (uView * uSpotlight_pos1 - pos).xyz; 
+    vSpotlight_distancia1 = length(vSpotlight1);
+    vSpotlight_direcao_view1 = normalize(mat3(uView) * uSpot_light_direcao_mundo_1);
 
-    vSpotLight2 = (uView * uSpotLightPos2 - pos).xyz; 
-    vSpotLightDistance2 = length(vSpotLight2);
-    vSpotLightDirectionView2 = normalize(mat3(uView) * uSpotLightDirectionWorld2);
+    vSpotlight2 = (uView * uSpotlight_pos2 - pos).xyz; 
+    vSpotlight_distancia2 = length(vSpotlight2);
+    vSpotlight_direcao_view2 = normalize(mat3(uView) * uSpot_light_direcao_mundo_2);
 }
 `;
 
-// Em projeto_final_cg/main.js
 
 var gFragmentShaderSrc = `#version 300 es
 precision highp float;
@@ -545,22 +520,22 @@ uniform vec4 uCorDifusao;
 uniform vec4 uCorEspecular;
 uniform float uAlfaEsp;
 
-in vec3 vSpotLight1;
-in vec3 vSpotLightDirectionView1;
-in vec3 vSpotLight2;
-in vec3 vSpotLightDirectionView2;
+in vec3 vSpotlight1;
+in vec3 vSpotlight_direcao_view1;
+in vec3 vSpotlight2;
+in vec3 vSpotlight_direcao_view2;
 
-uniform vec4 uCorDifusaoSpot;
-uniform vec4 uCorEspecularSpot;
-uniform float uInnerCutoff;
-uniform float uOuterCutoff;
+uniform vec4 uCor_difusao_spotlight;
+uniform vec4 uCor_especular_spotlight;
+uniform float uCorte_interno;
+uniform float uCorte_externo;
 
-in float vSpotLightDistance1;
-in float vSpotLightDistance2;
+in float vSpotlight_distancia1;
+in float vSpotlight_distancia2;
 
-uniform float uConstant;
+uniform float uConstante;
 uniform float uLinear;
-uniform float uQuadratic;
+uniform float Quadratico;
 
 out vec4 corSaida;
 
@@ -580,36 +555,37 @@ void main() {
 
 
     //////// Cálculo do spot light 1 com atenuação ////////
-    float attenuation1 = 1.0 / (uConstant + uLinear * vSpotLightDistance1 + uQuadratic * (vSpotLightDistance1 * vSpotLightDistance1));
-    vec3 spotLightV1 = normalize(vSpotLight1);
-    float angle1 = dot(-spotLightV1, vSpotLightDirectionView1);
-    float spotFactor1 = smoothstep(uOuterCutoff, uInnerCutoff, angle1);
-    vec3 spotHalfV1 = normalize(spotLightV1 + viewV);
-    float kd_spot1 = max(0.0, dot(normalV, spotLightV1));
-    vec4 difusaoSpot1 = kd_spot1 * uCorDifusaoSpot;
-    float ks_spot1 = pow(max(0.0, dot(normalV, spotHalfV1)), uAlfaEsp);
-    vec4 especularSpot1 = vec4(0.0);
+    float atenuacao1 = 1.0 / (uConstante + uLinear * vSpotlight_distancia1 + Quadratico * (vSpotlight_distancia1 * vSpotlight_distancia1));
+    vec3 vSpotlight1 = normalize(vSpotlight1);
+    float angulo1 = dot(-vSpotlight1, vSpotlight_direcao_view1);
+    float spot_fator1 = smoothstep(uCorte_externo, uCorte_interno, angulo1);
+    vec3 spot_halfv1 = normalize(vSpotlight1 + viewV);
+    float kd_spot1 = max(0.0, dot(normalV, vSpotlight1));
+    vec4 spot_difusao1 = kd_spot1 * uCor_difusao_spotlight;
+    float ks_spot1 = pow(max(0.0, dot(normalV, spot_halfv1)), uAlfaEsp);
+    vec4 spot_especular1 = vec4(0.0);
     if (kd_spot1 > 0.0) {
-        especularSpot1 = ks_spot1 * uCorEspecularSpot;
+        spot_especular1 = ks_spot1 * uCor_especular_spotlight;
     }
-    vec4 spotLightTotal1 = (difusaoSpot1 + especularSpot1) * spotFactor1 * attenuation1; // Multiplica pela atenuação
+    vec4 spotlight_total1 = (spot_difusao1 + spot_especular1) * spot_fator1 * atenuacao1; 
 
     ////////// Cálculo do spot light 2 com atenuação /////////
-    float attenuation2 = 1.0 / (uConstant + uLinear * vSpotLightDistance2 + uQuadratic * (vSpotLightDistance2 * vSpotLightDistance2));
-    vec3 spotLightV2 = normalize(vSpotLight2);
-    float angle2 = dot(-spotLightV2, vSpotLightDirectionView2);
-    float spotFactor2 = smoothstep(uOuterCutoff, uInnerCutoff, angle2);
-    vec3 spotHalfV2 = normalize(spotLightV2 + viewV);
-    float kd_spot2 = max(0.0, dot(normalV, spotLightV2));
-    vec4 difusaoSpot2 = kd_spot2 * uCorDifusaoSpot;
-    float ks_spot2 = pow(max(0.0, dot(normalV, spotHalfV2)), uAlfaEsp);
-    vec4 especularSpot2 = vec4(0.0);
+    float atenuacao2 = 1.0 / (uConstante + uLinear * vSpotlight_distancia2 + Quadratico * (vSpotlight_distancia2 * vSpotlight_distancia2));
+    vec3 vSpotlight2 = normalize(vSpotlight2);
+    float angulo2 = dot(-vSpotlight2, vSpotlight_direcao_view2);
+    float spot_fator2 = smoothstep(uCorte_externo, uCorte_interno, angulo2);
+    vec3 spot_halfv2 = normalize(vSpotlight2 + viewV);
+    float kd_spot2 = max(0.0, dot(normalV, vSpotlight2));
+    vec4 spot_difusao2 = kd_spot2 * uCor_difusao_spotlight;
+    float ks_spot2 = pow(max(0.0, dot(normalV, spot_halfv2)), uAlfaEsp);
+    vec4 spot_especular2 = vec4(0.0);
     if (kd_spot2 > 0.0) {
-        especularSpot2 = ks_spot2 * uCorEspecularSpot;
+        spot_especular2 = ks_spot2 * uCor_especular_spotlight;
     }
-    vec4 spotLightTotal2 = (difusaoSpot2 + especularSpot2) * spotFactor2 * attenuation2; // Multiplica pela atenuação
+    vec4 spotlight_total2 = (spot_difusao2 + spot_especular2) * spot_fator2 * atenuacao2; 
 
-    corSaida = uCorAmbiente + cor_point_light + spotLightTotal1 + spotLightTotal2;
+    corSaida = uCorAmbiente + cor_point_light + spotlight_total1 + spotlight_total2;
+    // corSaida = spotlight_total1 + spotlight_total2;
     corSaida.a = 1.0;
 }
 `;
