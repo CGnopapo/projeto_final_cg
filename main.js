@@ -49,7 +49,7 @@ var gCamera_modo0 = {
     altura: 0.7,
     para_tras: 6.605,
     para_lado: 0,
-    orientacao: vec3(0,0,0)
+    orientacao: vec3(0,0,1)
 }
 
 var gCamera_modo1 = {
