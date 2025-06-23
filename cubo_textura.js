@@ -48,8 +48,8 @@ out vec2 vTexCoord;
 
 out float visibilidade;
 
-const float densidade = 0.007;
-const float gradiente = 3.0;
+const float densidade = 0.02;
+const float gradiente = 2.0;
 
 void main() {
     mat4 modelView = uView * uModel;
@@ -90,7 +90,7 @@ uniform float uAlfaEsp;
 uniform sampler2D uTextureMap;
 
 in float visibilidade;
-uniform vec3 uCorNeblina;
+uniform vec4 uCorNeblina;
 
 void main() {
     vec3 normalV = normalize(vNormal);
@@ -112,7 +112,7 @@ void main() {
     corSaida = corSaida * texture(uTextureMap, vTexCoord);
     corSaida.a = 1.0;
 
-    corSaida = mix(vec4(uCorNeblina, 1.0), corSaida, visibilidade);
+    corSaida = mix(uCorNeblina, corSaida, visibilidade);
 }
 `;
 function crieShaders_textura() {
@@ -156,7 +156,7 @@ function crieShaders_textura() {
 
     // Neblina
     gShaderTextura.uCorNeblina = gl.getUniformLocation(gShaderTextura.program, "uCorNeblina");
-    gl.uniform3fv(gShaderTextura.uCorNeblina, vec3(.6, .78, .76));
+    gl.uniform4fv(gShaderTextura.uCorNeblina, FUNDO);
     
     gl.useProgram(gShader.program);
     }
