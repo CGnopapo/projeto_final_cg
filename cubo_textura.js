@@ -22,7 +22,7 @@ var gShaderTextura = {
     uView: null,
     uPerspective: null,
     uInverseTranspose: null,
-    uLuzPos: null,
+    uLuzDir: null,
     uCorAmb: null,
     uCorDif: null,
     uCorEsp: null,
@@ -39,7 +39,7 @@ uniform mat4 uView;
 uniform mat4 uPerspective;
 uniform mat4 uInverseTranspose;
 
-uniform vec4 uLuzPos;
+uniform vec4 uLuzDir;
 
 out vec3 vNormal;
 out vec3 vLight;
@@ -60,7 +60,7 @@ void main() {
     vNormal = mat3(uInverseTranspose) * aNormal;
     vec4 pos = modelView * vec4(aPosition, 1);
 
-    vLight = (uView * uLuzPos - pos).xyz;
+    vLight = (uView * uLuzDir).xyz;
     vView = -(pos.xyz);
     vTexCoord = aTexCoord; 
 
@@ -145,8 +145,8 @@ function crieShaders_textura() {
     gl.uniformMatrix4fv(gShaderTextura.uView, false, flatten(gCtx.view));
 
     // parametros para iluminação
-    gShaderTextura.uLuzPos = gl.getUniformLocation(gShaderTextura.program, "uLuzPos");
-    gl.uniform4fv(gShaderTextura.uLuzPos, LUZ.pos);
+    gShaderTextura.uLuzDir = gl.getUniformLocation(gShaderTextura.program, "uLuzDir");
+    gl.uniform4fv(gShaderTextura.uLuzDir, gLuzGlobal.dir());
 
     // fragment shader
     gShaderTextura.uCorAmb = gl.getUniformLocation(gShaderTextura.program, "uCorAmbiente");
@@ -262,9 +262,9 @@ function Cubo_textura(posicao,orientacao,velo_trans, vel_rotacao, escala, cor_am
         gl.uniformMatrix4fv(gShaderTextura.uModel, false, flatten(model));
         gl.uniformMatrix4fv(gShaderTextura.uInverseTranspose, false, flatten(modelViewInvTrans));
 
-        gl.uniform4fv(gShaderTextura.uCorAmb, mult(LUZ.amb, this.cor_ambiente));
-        gl.uniform4fv(gShaderTextura.uCorDif, mult(LUZ.dif, this.cor_difusao));
-        gl.uniform4fv(gShaderTextura.uCorEsp, LUZ.esp);
+        gl.uniform4fv(gShaderTextura.uCorAmb, mult(gLuzGlobal.amb(), this.cor_ambiente));
+        gl.uniform4fv(gShaderTextura.uCorDif, mult(gLuzGlobal.dif(), this.cor_difusao));
+        gl.uniform4fv(gShaderTextura.uCorEsp, gLuzGlobal.esp());
         gl.uniform1f(gShaderTextura.uAlfaEsp, this.alpha_especular);
 
         gl.bindVertexArray(this.vao);

@@ -135,6 +135,14 @@ function Skybox() {
         gl.drawArrays(gl.TRIANGLES, 0, VERTICES.length);
         gl.bindVertexArray(null);
 
+        gSol.mudaProgresso(tempo / 24000);
+        gLua.mudaProgresso(((tempo + 12000) % 24000) / 24000);
+
+        gLuzGlobal.mistura(fator);
+        gLuzGlobal.mudaProgresso(((tempo + 400) % 12000) / 12000);
+        gLuzGlobal.atualizaUniformesDo(gShader.program);
+        gLuzGlobal.atualizaUniformesDo(gShaderTextura.program);
+
         gl.useProgram(gShader.program);
     };
 
