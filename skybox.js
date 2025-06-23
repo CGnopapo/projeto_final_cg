@@ -1,7 +1,8 @@
 function Skybox() {
-    /* 
-        Required constants
-    */
+
+    const DIA_ID = 10;
+    const NOITE_ID =11;
+
     const gSkyboxVertexShaderSource = `#version 300 es
 
     in vec2 aPosition;
@@ -11,7 +12,6 @@ function Skybox() {
         vec4 pos = vec4(aPosition, 1.0, 1.0);
         vPosition = pos;
         gl_Position = pos;
-        gl_Position.z = 1.0;
     }
     `;
 
@@ -22,14 +22,14 @@ function Skybox() {
     uniform samplerCube uSkyboxNoite;
     uniform float uFatorDiaNoite;
     uniform mat4 uViewDirectionProjectionInverse;
-    uniform vec3 uCorNeblina;
+    uniform vec4 uCorNeblina;
 
     in vec4 vPosition;
 
     out vec4 corSaida;
 
     const float limiteInferior = 0.0;
-    const float limiteSuperior = 0.05;
+    const float limiteSuperior = 0.15;
 
     void main() {
         vec4 t = uViewDirectionProjectionInverse * vPosition;
@@ -38,8 +38,8 @@ function Skybox() {
         corSaida = mix(texDia, texNoite, uFatorDiaNoite);
 
         float fator = (t.y - limiteInferior) / (limiteSuperior - limiteInferior);
-        fator = clamp(fator, 0.0, 1.1);
-        corSaida = mix(vec4(uCorNeblina, 1.0), corSaida, fator);
+        fator = clamp(fator, 0.0, 1.0);
+        corSaida = mix(uCorNeblina, corSaida, fator);
     }
     `;
 
@@ -52,12 +52,11 @@ function Skybox() {
         [ 1,  1],
     ];
 
-    /*
-        Attributes and methods
-    */
     this.program = makeProgram(gl, gSkyboxVertexShaderSource, gSkyboxFragmentShaderSource);
 
     this.init = function () {
+        this.orientacao = 0;
+
         this.attribs = {
             position: gl.getAttribLocation(this.program, "aPosition"),
             skyboxDia: gl.getUniformLocation(this.program, "uSkyboxDia"),
@@ -67,6 +66,7 @@ function Skybox() {
             corNeblina: gl.getUniformLocation(this.program, "uCorNeblina")
         };
 
+        gl.useProgram(this.program);
         this.vao = gl.createVertexArray();
         gl.bindVertexArray(this.vao);
 
@@ -79,12 +79,13 @@ function Skybox() {
         gl.enableVertexAttribArray(this.attribs.position);
 
         let diaInfos = this.geraInfosFacesSkybox('skybox_day');
-        this.carregaInfosFacesSkybox(diaInfos, 1);
+        this.carregaInfosFacesSkybox(diaInfos, DIA_ID);
 
         let noiteInfos = this.geraInfosFacesSkybox('skybox_night');
-        this.carregaInfosFacesSkybox(noiteInfos, 0);
+        this.carregaInfosFacesSkybox(noiteInfos, NOITE_ID);
 
         gl.bindVertexArray(null);
+        gl.useProgram(gShader.program);
     };
 
     this.desenha = function () {
@@ -93,21 +94,24 @@ function Skybox() {
 
         let tempo = (Date.now() / 2) % 24000;
 
-        let viewDirectionProjectionMatrix = mult(gCtx.perspective, gCtx.view);
-        let rotacao = rotateY(((tempo / 100) / 240) * 360);
+        let view = gCtx.view;
+        view[0][3] = 0;
+        view[1][3] = 0;
+        view[2][3] = 0;
+        let viewDirectionProjectionMatrix = mult(gCtx.perspective, view);
+        this.orientacao += .01;
+        let rotacao = rotateY(this.orientacao);
         viewDirectionProjectionMatrix = mult(viewDirectionProjectionMatrix, rotacao);
         let viewDirectionProjectionInverseMatrix = inverse(viewDirectionProjectionMatrix);
 
-        // Set the uniforms
         gl.uniformMatrix4fv(
             this.attribs.projInverse, 
             false,
             flatten(viewDirectionProjectionInverseMatrix)
         );
 
-        // Tell the shader to use texture unit 0 for u_skybox
-        gl.uniform1i(this.attribs.skyboxNoite, 0);
-        gl.uniform1i(this.attribs.skyboxDia, 1);
+        gl.uniform1i(this.attribs.skyboxDia, DIA_ID);
+        gl.uniform1i(this.attribs.skyboxNoite, NOITE_ID);
 
         let fator;
         if (tempo < 12000) {
@@ -122,12 +126,10 @@ function Skybox() {
         else {
             fator = 1 - (tempo - 23000) / 1000;
         }
-        // console.log(fator, tempo);
 
         gl.uniform1f(this.attribs.fatorDiaNoite, fator);
-        gl.uniform3fv(this.attribs.corNeblina, vec3(.7, .7, .7));
+        gl.uniform4fv(this.attribs.corNeblina, FUNDO);
 
-        // let our quad pass the depth test at 1.0
         gl.depthFunc(gl.LEQUAL);
 
         gl.drawArrays(gl.TRIANGLES, 0, VERTICES.length);
@@ -144,40 +146,44 @@ function Skybox() {
         gl.useProgram(gShader.program);
     };
 
-    this.carregaInfosFacesSkybox = function (infosFaces, id) {
-        var texture = gl.createTexture();
-        gl.activeTexture(gl.TEXTURE0 + id);
-        gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
+this.carregaInfosFacesSkybox = function (infosFaces, id) {
+    var texture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0 + id);
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
 
-        infosFaces.forEach((faceInfo) => {
-            const {target, url} = faceInfo;
+    let facesCarregadas = 0; // 1. Adiciona um contador
 
-            // Upload the canvas to the cubemap face.
-            const level = 0;
-            const internalFormat = gl.RGBA;
-            const width = 512;
-            const height = 512;
-            const format = gl.RGBA;
-            const type = gl.UNSIGNED_BYTE;
+    infosFaces.forEach((faceInfo) => {
+        const {target, url} = faceInfo;
 
-            // setup each face so it's immediately renderable
-            gl.texImage2D(target, level, internalFormat, width, height, 0, format, type, null);
+        const level = 0;
+        const internalFormat = gl.RGBA;
+        const width = 512;
+        const height = 512;
+        const format = gl.RGBA;
+        const type = gl.UNSIGNED_BYTE;
 
-            // Asynchronously load an image
-            const image = new Image();
-            image.crossOrigin = '';
-            image.src = url;
-            image.addEventListener('load', function() {
-                // Now that the image has loaded make copy it to the texture.
-                gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
-                gl.texImage2D(target, level, internalFormat, format, type, image);
+        // Define a textura com um placeholder (pixel azul) enquanto a imagem carrega
+        gl.texImage2D(target, level, internalFormat, width, height, 0, format, type, null);
+
+        const image = new Image();
+        image.crossOrigin = '';
+        image.src = url;
+        image.addEventListener('load', function() {
+            // Quando a imagem carregar, a envia para a face correta da textura
+            gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
+            gl.texImage2D(target, level, internalFormat, format, type, image);
+
+            facesCarregadas++; // 2. Incrementa o contador
+            if (facesCarregadas === 6) {
+                // 3. Quando todas as 6 faces carregarem, gera o mipmap e configura os parâmetros
                 gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
-            });
+                gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+            }
         });
-
-        gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
-        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-    };
+    });
+    // 4. Remove as chamadas que estavam aqui, pois agora são feitas dentro do 'if'
+};
 
     this.geraInfosFacesSkybox = function (diretorio) {
         return [
