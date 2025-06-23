@@ -125,7 +125,7 @@ function main() {
     gSkybox.init();
 
     let carro = new Carro(
-        vec3(-10, 0.6, 0),          // posição
+        vec3(-10, 0.6, 2.2),          // posição
         vec3(0, 0, 0),              // orientação
         vec3(-10, 0, 0),            // velocidade translacional
         vec3(0, 0, 0),              // velocidade rotacional
@@ -137,9 +137,9 @@ function main() {
     carro.init()
     carro.adiciona_ao_cenario();
     let carro2 = new Carro(
-        vec3(14, 0.6, 0),             // posição
+        vec3(18, 0.6, -2.2),             // posição
         vec3(0, 0, 0),              // orientação
-        vec3(0, 0, 0),           // velocidade translacional
+        vec3(-10, 0, 0),           // velocidade translacional
         vec3(0, 0, 0),            // velocidade rotacional
         vec3(1, 1, 1),              // escala
         vec4(1, 0, 0, 1.0),   // cor ambiente
@@ -148,6 +148,76 @@ function main() {
     );
     carro2.init()
     carro2.adiciona_ao_cenario();
+
+
+    
+    const NUM_VEHICLES = 30;
+    const PISTA_LARGURA = 12;
+
+    for (let i = 0; i < NUM_VEHICLES; i++) {
+        let posX = -30 - Math.random() * 970;         
+        let centro_faixa = PISTA_LARGURA / 4;
+        let lado = (Math.random() < 0.5) ? -1 : 1;
+        let posZ = lado * centro_faixa;
+
+        let cor_aleatoria = vec4(
+            Math.random(),
+            Math.random(),
+            Math.random(),
+            1.0
+        );
+
+        if (Math.random() < 0.7) { // Create a Car
+            let posY = 0.6;
+            let pos_novo = vec3(posX, posY, posZ);
+            let vel_x = -8 - Math.random() * 6;
+            
+            let carro = new Carro(
+                pos_novo,                   // posição
+                vec3(0, 0, 0),              // orientação
+                vec3(vel_x, 0, 0),          // velocidade translacional
+                vec3(0, 0, 0),              // velocidade rotacional
+                vec3(1, 1, 1),              // escala
+                cor_aleatoria,              // cor ambiente
+                cor_aleatoria,              // cor difusa
+                80                          // alpha especular
+            );
+            carro.init();
+            carro.adiciona_ao_cenario();
+        } else { // Create a Truck
+            let posY = 1;
+            let pos_novo = vec3(posX, posY, posZ);
+            let vel_caminhao = 8 + Math.random() * 4;
+            
+            let caminhao_bot = new Caminhao(
+                pos_novo,                   // posicao
+                vec3(0, 0, 0),              // orientacao
+                vel_caminhao,               // velo_trans (escalar)
+                vec3(0, 0, 0),              // vel_rotacao
+                vec3(1, 1, 1),              // escala
+                cor_aleatoria,              // cor ambiente
+                cor_aleatoria,              // cor difusa
+                80,                         // alpha especular
+                null,                       // textura_painel
+                null,                       // textura_porta_dir
+                null                        // textura_porta_esq
+            );
+            caminhao_bot.init();
+            caminhao_bot.adiciona_ao_cenario();
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -164,7 +234,7 @@ function main() {
 
 
     caminhao = new Caminhao(
-        vec3(0, 1, 0),              // posição
+        vec3(0, 1, 2.2),              // posição
         vec3(0, 0, 0),              // orientação
         10,           // velocidade translacional, caminhão sempre anda em direção a -x
         vec3(0, 0, 0),            // velocidade rotacional

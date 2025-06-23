@@ -1,7 +1,7 @@
 function Skybox() {
 
-    const DIA_ID = 4;
-    const NOITE_ID = 5;
+    const DIA_ID = 10;
+    const NOITE_ID =11;
 
     const gSkyboxVertexShaderSource = `#version 300 es
 
@@ -138,36 +138,44 @@ function Skybox() {
         gl.useProgram(gShader.program);
     };
 
-    this.carregaInfosFacesSkybox = function (infosFaces, id) {
-        var texture = gl.createTexture();
-        gl.activeTexture(gl.TEXTURE0 + id);
-        gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
+this.carregaInfosFacesSkybox = function (infosFaces, id) {
+    var texture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0 + id);
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
 
-        infosFaces.forEach((faceInfo) => {
-            const {target, url} = faceInfo;
+    let facesCarregadas = 0; // 1. Adiciona um contador
 
-            const level = 0;
-            const internalFormat = gl.RGBA;
-            const width = 512;
-            const height = 512;
-            const format = gl.RGBA;
-            const type = gl.UNSIGNED_BYTE;
+    infosFaces.forEach((faceInfo) => {
+        const {target, url} = faceInfo;
 
-            gl.texImage2D(target, level, internalFormat, width, height, 0, format, type, null);
+        const level = 0;
+        const internalFormat = gl.RGBA;
+        const width = 512;
+        const height = 512;
+        const format = gl.RGBA;
+        const type = gl.UNSIGNED_BYTE;
 
-            const image = new Image();
-            image.crossOrigin = '';
-            image.src = url;
-            image.addEventListener('load', function() {
-                gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
-                gl.texImage2D(target, level, internalFormat, format, type, image);
+        // Define a textura com um placeholder (pixel azul) enquanto a imagem carrega
+        gl.texImage2D(target, level, internalFormat, width, height, 0, format, type, null);
+
+        const image = new Image();
+        image.crossOrigin = '';
+        image.src = url;
+        image.addEventListener('load', function() {
+            // Quando a imagem carregar, a envia para a face correta da textura
+            gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
+            gl.texImage2D(target, level, internalFormat, format, type, image);
+
+            facesCarregadas++; // 2. Incrementa o contador
+            if (facesCarregadas === 6) {
+                // 3. Quando todas as 6 faces carregarem, gera o mipmap e configura os parâmetros
                 gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
-            });
+                gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+            }
         });
-
-        gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
-        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-    };
+    });
+    // 4. Remove as chamadas que estavam aqui, pois agora são feitas dentro do 'if'
+};
 
     this.geraInfosFacesSkybox = function (diretorio) {
         return [
