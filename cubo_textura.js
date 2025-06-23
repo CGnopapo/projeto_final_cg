@@ -1,4 +1,4 @@
-const CUBO_CANTOS_textura = [
+let CUBO_CANTOS_textura = [
     vec4(-0.5, -0.5, 0.5, 1.0),
     vec4(-0.5, 0.5, 0.5, 1.0),
     vec4(0.5, 0.5, 0.5, 1.0),
@@ -22,7 +22,7 @@ var gShaderTextura = {
     uView: null,
     uPerspective: null,
     uInverseTranspose: null,
-    uLuzPos: null,
+    uLuzDir: null,
     uCorAmb: null,
     uCorDif: null,
     uCorEsp: null,
@@ -39,7 +39,7 @@ uniform mat4 uView;
 uniform mat4 uPerspective;
 uniform mat4 uInverseTranspose;
 
-uniform vec4 uLuzPos;
+uniform vec4 uLuzDir;
 
 out vec3 vNormal;
 out vec3 vLight;
@@ -48,8 +48,8 @@ out vec2 vTexCoord;
 
 out float visibilidade;
 
-const float densidade = 0.03;
-const float gradiente = 3.0;
+const float densidade = 0.01;
+const float gradiente = 1.0;
 
 void main() {
     mat4 modelView = uView * uModel;
@@ -60,7 +60,7 @@ void main() {
     vNormal = mat3(uInverseTranspose) * aNormal;
     vec4 pos = modelView * vec4(aPosition, 1);
 
-    vLight = (uView * uLuzPos - pos).xyz;
+    vLight = (uView * uLuzDir).xyz;
     vView = -(pos.xyz);
     vTexCoord = aTexCoord; 
 
@@ -90,7 +90,7 @@ uniform float uAlfaEsp;
 uniform sampler2D uTextureMap;
 
 in float visibilidade;
-uniform vec3 uCorNeblina;
+uniform vec4 uCorNeblina;
 
 void main() {
     vec3 normalV = normalize(vNormal);
@@ -112,7 +112,7 @@ void main() {
     corSaida = corSaida * texture(uTextureMap, vTexCoord);
     corSaida.a = 1.0;
 
-    corSaida = mix(vec4(uCorNeblina, 1.0), corSaida, visibilidade);
+    corSaida = mix(uCorNeblina, corSaida, visibilidade);
 }
 `;
 function crieShaders_textura() {
@@ -145,8 +145,8 @@ function crieShaders_textura() {
     gl.uniformMatrix4fv(gShaderTextura.uView, false, flatten(gCtx.view));
 
     // parametros para iluminação
-    gShaderTextura.uLuzPos = gl.getUniformLocation(gShaderTextura.program, "uLuzPos");
-    gl.uniform4fv(gShaderTextura.uLuzPos, LUZ.pos);
+    gShaderTextura.uLuzDir = gl.getUniformLocation(gShaderTextura.program, "uLuzDir");
+    gl.uniform4fv(gShaderTextura.uLuzDir, gLuzGlobal.dir());
 
     // fragment shader
     gShaderTextura.uCorAmb = gl.getUniformLocation(gShaderTextura.program, "uCorAmbiente");
@@ -156,7 +156,7 @@ function crieShaders_textura() {
 
     // Neblina
     gShaderTextura.uCorNeblina = gl.getUniformLocation(gShaderTextura.program, "uCorNeblina");
-    gl.uniform3fv(gShaderTextura.uCorNeblina, vec3(.6, .78, .76));
+    gl.uniform4fv(gShaderTextura.uCorNeblina, FUNDO);
     
     gl.useProgram(gShader.program);
     }
@@ -193,17 +193,17 @@ function Cubo_textura(posicao,orientacao,velo_trans, vel_rotacao, escala, cor_am
 
         // Configura textura
         if (e_da_internet){
-            configureTexturaDaURL(this.textura, 0);
+            this.texture = configura_texturaDaURL(this.textura);
         }
         else {
-            configureTextura(this.textura, 0);
+            this.texture = configura_textura(this.textura,0);
         }
         // === Criação do VAO ===
         this.vao = gl.createVertexArray();
         gl.bindVertexArray(this.vao);
 
         // Buffer de posições
-        const bufVertices = gl.createBuffer();
+        let bufVertices = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, bufVertices);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(this.pos), gl.STATIC_DRAW);
         var aPosition = gl.getAttribLocation(gShaderTextura.program, "aPosition");
@@ -211,16 +211,15 @@ function Cubo_textura(posicao,orientacao,velo_trans, vel_rotacao, escala, cor_am
         gl.enableVertexAttribArray(aPosition);
 
         // Buffer de normais
-        const bufNormais = gl.createBuffer();
+        let bufNormais = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, bufNormais);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(this.nor), gl.STATIC_DRAW);
-        const aNormal = gl.getAttribLocation(gShaderTextura.program, "aNormal");
+        let aNormal = gl.getAttribLocation(gShaderTextura.program, "aNormal");
         gl.vertexAttribPointer(aNormal, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(aNormal);
 
 
-        ///// buffer / in aTexCoord associado ao vetor gaTexCoords /// Não é a textuta uTextureMap e sim o as coordenadas (s,t)
-        //// de cada vértice
+
         var bufTextura = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, bufTextura);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(this.textura_st), gl.STATIC_DRAW);
@@ -229,10 +228,8 @@ function Cubo_textura(posicao,orientacao,velo_trans, vel_rotacao, escala, cor_am
         gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(aTexCoord);
 
-        //// Textura de fato
         gl.uniform1i(gl.getUniformLocation(gShaderTextura.program, "uTextureMap"), 0);
 
-        // Desvincula o VAO
         gl.bindVertexArray(null);
         gl.useProgram(gShader.program);
     };
@@ -254,17 +251,20 @@ function Cubo_textura(posicao,orientacao,velo_trans, vel_rotacao, escala, cor_am
     }
     this.desenha = function () {
         gl.useProgram(gShaderTextura.program);
-        const model = this.model;
-        const modelView = mult(gCtx.view, model);
-        const modelViewInvTrans = transpose(inverse(modelView));
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        gl.uniform1i(gl.getUniformLocation(gShaderTextura.program, "uTextureMap"), 0);
+        let model = this.model;
+        let modelView = mult(gCtx.view, model);
+        let modelViewInvTrans = transpose(inverse(modelView));
 
         gl.uniformMatrix4fv(gShaderTextura.uView, false, flatten(gCtx.view));
         gl.uniformMatrix4fv(gShaderTextura.uModel, false, flatten(model));
         gl.uniformMatrix4fv(gShaderTextura.uInverseTranspose, false, flatten(modelViewInvTrans));
 
-        gl.uniform4fv(gShaderTextura.uCorAmb, mult(LUZ.amb, this.cor_ambiente));
-        gl.uniform4fv(gShaderTextura.uCorDif, mult(LUZ.dif, this.cor_difusao));
-        gl.uniform4fv(gShaderTextura.uCorEsp, LUZ.esp);
+        gl.uniform4fv(gShaderTextura.uCorAmb, mult(gLuzGlobal.amb(), this.cor_ambiente));
+        gl.uniform4fv(gShaderTextura.uCorDif, mult(gLuzGlobal.dif(), this.cor_difusao));
+        gl.uniform4fv(gShaderTextura.uCorEsp, gLuzGlobal.esp());
         gl.uniform1f(gShaderTextura.uAlfaEsp, this.alpha_especular);
         gl.uniform1i(gl.getUniformLocation(gShaderTextura.program, "uTextureMap"), 0);
 
@@ -307,48 +307,28 @@ function quad_textura(pos, nor,textura_st, vert, a, b, c, d) {
     textura_st.push(gTextura_st[3]);
 };
 
-function configureTextura(img, id) {
-    var texture = gl.createTexture();
-    gl.activeTexture(gl.TEXTURE0 + id);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
+function aplica_textura(gl, texture, img) {
 
+    gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
     gl.generateMipmap(gl.TEXTURE_2D);
-
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
 }
 
-function configureTexturaDaURL(url, id) {
-    // cria a textura
+
+function configura_textura(img, unidade) {
     var texture = gl.createTexture();
-    // seleciona a unidade TEXTURE0
-    gl.activeTexture(gl.TEXTURE0 + id);
-    // ativa a textura
+    gl.activeTexture(gl.TEXTURE0 + (unidade || 0));
     gl.bindTexture(gl.TEXTURE_2D, texture);
-
-    // Carrega uma textura de um pixel 1x1 vermelho, temporariamente
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
-        new Uint8Array([255, 0, 0, 255]));
-
-    // Carraga a imagem da URL:
-    // veja https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image
-    var img = new Image(); // cria um bitmap
-    img.src = url;
-    img.crossOrigin = "anonymous";
-    // espera carregar = evento "load"
-    img.addEventListener('load', function () {
-            console.log("Carregou imagem", img.width, img.height);
-            // depois de carregar, copiar para a textura
-            gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, img.width, img.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, img);
-            gl.generateMipmap(gl.TEXTURE_2D);
-            // experimente usar outros filtros removendo o comentário da linha abaixo.
-            //gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        }
-    );
-    return img;
-};
+        new Uint8Array([0, 0, 255, 255]));
+    if (img.complete) {
+        aplica_textura(gl, texture, img);
+    } else {
+        img.addEventListener('load', aplica_textura.bind(null, gl, texture, img));
+    }
+    return texture; 
+}
