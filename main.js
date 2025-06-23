@@ -1,5 +1,6 @@
 "use strict";
-const FUNDO = [0, 0, 0, 1];
+// const FUNDO = [.6, .78, .76, 1];
+const FUNDO = [0.6, 0.6, 0.6, 1];
 
 const LUZ = {
     pos: vec4(100, 100000000.0,100, 1),
@@ -38,6 +39,7 @@ var gCtx = {
 
 window.onload = main;
 
+var gSkybox;
 var gObjetos = []
 var gUltimoT = Date.now();
 
@@ -118,6 +120,9 @@ function main() {
     crieShaders_textura();
     window.onkeydown = moveCamera
     gCtx.view = lookAt(gcamera_modos[modo_camera].eye,gcamera_modos[modo_camera].at,gcamera_modos[modo_camera].up)
+
+    gSkybox = new Skybox();
+    gSkybox.init();
 
     let carro = new Carro(
         vec3(-10, 0.6, 0),          // posição
@@ -340,9 +345,13 @@ function render(delta) {
         return;
     }
 
+    gl.enable(gl.CULL_FACE);
+    gl.enable(gl.DEPTH_TEST);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gSkybox.desenha();
     atualiza_camera(delta)
     atualiza_farol_caminhao(delta);
+  
     for (let i = 0; i < gObjetos.length; i++) {
         gObjetos[i].atualiza_posicao_orientacao(delta);
         gObjetos[i].atualiza_model();
@@ -464,6 +473,8 @@ function crieShaders() {
     gShader.uLinear = gl.getUniformLocation(gShader.program, "uLinear");
     gShader.Quadratico = gl.getUniformLocation(gShader.program, "Quadratico");
 
+    gShader.uCorNeblina = gl.getUniformLocation(gShader.program, "uCorNeblina");
+    gl.uniform4fv(gShader.uCorNeblina, FUNDO);
 };
 
 var gVertexShaderSrc = `#version 300 es
@@ -491,11 +502,16 @@ out vec3 vSpotlight_direcao_view2;
 out float vSpotlight_distancia1; // Distância do fragmento para o farol 1
 out float vSpotlight_distancia2; // Distância do fragmento para o farol 2
 
+out float visibilidade;
+
+const float densidade = 0.02;
+const float gradiente = 2.0;
+
 void main() {
     mat4 modelView = uView * uModel;
-    gl_Position = uPerspective * modelView * vec4(aPosition, 1);
-    vNormal = mat3(uInverseTranspose) * aNormal;
     vec4 pos = modelView * vec4(aPosition, 1);
+    gl_Position = uPerspective * pos;
+    vNormal = mat3(uInverseTranspose) * aNormal;
     vLight = (uView * uLuzPos - pos).xyz;
     vView = -(pos.xyz);
 
@@ -506,6 +522,10 @@ void main() {
     vSpotlight2 = (uView * uSpotlight_pos2 - pos).xyz; 
     vSpotlight_distancia2 = length(vSpotlight2);
     vSpotlight_direcao_view2 = normalize(mat3(uView) * uSpot_light_direcao_mundo_2);
+
+    float distancia = length(pos.xyz);
+    visibilidade = exp(-pow(distancia * densidade, gradiente));
+    visibilidade = clamp(visibilidade, 0.0, 1.0);
 }
 `;
 
@@ -536,6 +556,9 @@ in float vSpotlight_distancia2;
 uniform float uConstante;
 uniform float uLinear;
 uniform float Quadratico;
+
+in float visibilidade;
+uniform vec4 uCorNeblina;
 
 out vec4 corSaida;
 
@@ -587,5 +610,7 @@ void main() {
     corSaida = uCorAmbiente + cor_point_light + spotlight_total1 + spotlight_total2;
     // corSaida = spotlight_total1 + spotlight_total2;
     corSaida.a = 1.0;
+
+    corSaida = mix(uCorNeblina, corSaida, visibilidade);
 }
 `;
