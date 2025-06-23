@@ -6,10 +6,10 @@ function Carro(posicao, orientacao, velo_trans, vel_rotacao, escala, cor_ambient
     this.escala = escala;
 
     this.partes = [];
-    const deslocamento = 0.2;
+    let deslocamento = 0.2;
 
     // Base do carro (posição relativa ao centro do carro)
-    this.partes.push(new ParteRelativa(
+    this.partes.push(new Parte_relativa(
         vec3(0, 0, 0),
         vec3(0, 0, 0),
         mult(escala, vec3(2.0, 0.5, 1.0)),
@@ -17,7 +17,7 @@ function Carro(posicao, orientacao, velo_trans, vel_rotacao, escala, cor_ambient
     ));
 
     // Teto do carro
-    this.partes.push(new ParteRelativa_teto(
+    this.partes.push(new ParteRelativa_teto_e_carga(
         vec3(deslocamento, 0.8, 0),
         vec3(0, 0, 0),
         mult(escala, vec3(1.2, 0.1, 0.8)),
@@ -25,83 +25,84 @@ function Carro(posicao, orientacao, velo_trans, vel_rotacao, escala, cor_ambient
     ));
 
     // Colunas
-    const baseDims = vec3(2.0, 0.5, 1.0);
-    const tetoDims = vec3(0.9, 0.01, 0.7);
-    const baseAltura = baseDims[1];
-    const tetoAltura = 0.8;
-    // No baseDims funciona, mas aqui não funciona, na verdade é pq o baseDims só funciona
+    let dimensoes_base = vec3(2.0, 0.5, 1.0);
+    let dimensoes_teto = vec3(0.9, 0.01, 0.7);
+    let altura_base = dimensoes_base[1];
+    let altura_teto = 0.8;
+    // No dimensoes_base funciona, mas aqui não funciona, na verdade é pq o dimensoes_base só funciona
     // pq está no (0,0,0). Então, não é o teto que abaixo que não funciona e sim que
     // ele se baseia em algo que só funciona pq está no (0,0,0). Vou deixar hardcoded
     // pq funciona no olhometro
-    //const tetoDims = vec3(1.2, 0.1, 0.8);
-    //const tetoAltura = tetoDims[1];
+    //let dimensoes_teto = vec3(1.2, 0.1, 0.8);
+    //let altura_teto = dimensoes_teto[1];
 
     // Cantos da parte superior da base do carro
-    const baseCantos = [
-        vec3(-baseDims[0] / 2, baseAltura / 2, -baseDims[2] / 2),
-        vec3(baseDims[0] / 2, baseAltura / 2, -baseDims[2] / 2),
-        vec3(-baseDims[0] / 2, baseAltura / 2, baseDims[2] / 2),
-        vec3(baseDims[0] / 2, baseAltura / 2, baseDims[2] / 2),
+    let cantos_base = [
+        vec3(-dimensoes_base[0] / 2, altura_base / 2, -dimensoes_base[2] / 2),
+        vec3(dimensoes_base[0] / 2, altura_base / 2, -dimensoes_base[2] / 2),
+        vec3(-dimensoes_base[0] / 2, altura_base / 2, dimensoes_base[2] / 2),
+        vec3(dimensoes_base[0] / 2, altura_base / 2, dimensoes_base[2] / 2),
     ];
 
     // Cantos da parte inferior do teto do carro
-    const tetoCantos = [
-        vec3((-tetoDims[0] / 2) + deslocamento, tetoAltura - tetoDims[1] / 2, -tetoDims[2] / 2),
-        vec3((tetoDims[0] / 2) + deslocamento, tetoAltura - tetoDims[1] / 2, -tetoDims[2] / 2),
-        vec3((-tetoDims[0] / 2) + deslocamento, tetoAltura - tetoDims[1] / 2, tetoDims[2] / 2),
-        vec3((tetoDims[0] / 2) + deslocamento, tetoAltura - tetoDims[1] / 2, tetoDims[2] / 2),
+    let cantos_teto = [
+        vec3((-dimensoes_teto[0] / 2) + deslocamento, altura_teto - dimensoes_teto[1] / 2, -dimensoes_teto[2] / 2),
+        vec3((dimensoes_teto[0] / 2) + deslocamento, altura_teto - dimensoes_teto[1] / 2, -dimensoes_teto[2] / 2),
+        vec3((-dimensoes_teto[0] / 2) + deslocamento, altura_teto - dimensoes_teto[1] / 2, dimensoes_teto[2] / 2),
+        vec3((dimensoes_teto[0] / 2) + deslocamento, altura_teto - dimensoes_teto[1] / 2, dimensoes_teto[2] / 2),
     ];
     // Gera cada coluna que liga a base ao teto
     for (let i = 0; i < 4; i++) {
-        const p0 = baseCantos[i];
-        const p1 = tetoCantos[i];
-        const delta = subtract(p1, p0);
-        const altura = length(delta);
-        const meio = add(p0, scale(0.5, delta));
-        const dir = normalize(delta);
+        let p0 = cantos_base[i];
+        let p1 = cantos_teto[i];
+        let delta = subtract(p1, p0);
+        let altura = length(delta);
+        let meio = add(p0, scale(0.5, delta));
+        let dir = normalize(delta);
         // Esse eixo determina o eixo no qual é necessário girar o vetor (0,1,0) para ele estar na direção de dir
-        const eixo = cross(vec3(0, 1, 0), dir);
+        let eixo = cross(vec3(0, 1, 0), dir);
         // angulo entre o dir e o (0,1,0)
-        const angulo = Math.acos(dot(vec3(0, 1, 0), dir)) * 180 / Math.PI;
-        let orientColuna;
+        let angulo = Math.acos(dot(vec3(0, 1, 0), dir)) * 180 / Math.PI;
+        let orientacao_coluna;
         if (eixo[0] === 0 && eixo[1] === 0 && eixo[2] === 0) {
-            orientColuna = vec3(0, 0, 0);
+            orientacao_coluna = vec3(0, 0, 0);
         } else {
-            orientColuna = scale(angulo, eixo);
+            orientacao_coluna = scale(angulo, eixo);
         }
 
-        this.partes.push(new ParteRelativa(
+        this.partes.push(new Parte_relativa(
             meio,
-            orientColuna,
+            orientacao_coluna,
             mult(escala, vec3(0.05, altura - 0.06, 0.05)),
             cor_ambiente, cor_difusao, alpha_especular
         ));
     }
 
     //////// Rodas///////
-    const raioRoda = 0.15;
-    const larguraRoda = 0.1;
-    const offsetY = -baseDims[1] / 2 - raioRoda;
+    let raio_roda = 0.15;
+    let largura_roda = 0.1;
+    let s = -dimensoes_base[1] / 2 - raio_roda;
 
-    const posRodas = [
-        vec3(-0.8, offsetY, -0.46),
-        vec3(0.8, offsetY, -0.46),
-        vec3(-0.8, offsetY, 0.46),
-        vec3(0.8, offsetY, 0.46)
+    let posicoes_rodas = [
+        vec3(-0.8, s, -0.46),
+        vec3(0.8, s, -0.46),
+        vec3(-0.8, s, 0.46),
+        vec3(0.8, s, 0.46)
     ];
     
-    // mexer aqui
-    for (const pos of posRodas) {
-        this.partes.push(new ParteCilindrica(
+    for (let pos of posicoes_rodas) {
+        this.partes.push(new Parte_cilindrica(
             pos,
             vec3(90, 0, 0),
-            mult(escala, vec3(raioRoda, larguraRoda, raioRoda)),
+            mult(escala, vec3(raio_roda, largura_roda, raio_roda)),
             cor_ambiente, cor_difusao, alpha_especular
         ));
     }
 
     this.init = function() {
-        this.partes.forEach(p => p.init());
+       for (let i = 0; i < this.partes.length; i++) {
+            this.partes[i].init();
+        }
     };
 
     this.atualiza_posicao_orientacao = function(delta) {
@@ -110,277 +111,26 @@ function Carro(posicao, orientacao, velo_trans, vel_rotacao, escala, cor_ambient
     };
 
     this.atualiza_model = function() {
-        const transformGlobal = mult(
-            mult(
-                mult(
-                    translate(this.posicao[0], this.posicao[1], this.posicao[2]),
-                    rotateX(this.orientacao[0])
-                ),
+        let matriz_model_carro_inteiro = mult(
+            mult(mult(translate(this.posicao[0], this.posicao[1], this.posicao[2]), rotateX(this.orientacao[0])),
                 rotateY(this.orientacao[1])
             ),
             rotateZ(this.orientacao[2])
         );
 
-        this.partes.forEach(p => p.atualiza_model(transformGlobal));
+        for (let i = 0; i < this.partes.length; i++) {
+            this.partes[i].atualiza_model(matriz_model_carro_inteiro);
+        }
     };
 
     this.adiciona_ao_cenario = function () {
         gObjetos.push(this); // adiciona o carro inteiro
     };
     this.desenha = function () {
-        this.partes.forEach(p => {
-            p.desenha();
-        });
-    };
-
-}
-
-function ParteRelativa(posRelativa, orientacaoRelativa, escala, cor_ambiente, cor_difusao, alpha_especular) {
-    this.posRelativa = posRelativa;
-    this.orientacaoRelativa = orientacaoRelativa;
-    this.escala = escala;
-    this.cor_ambiente = cor_ambiente;
-    this.cor_difusao = cor_difusao;
-    this.alpha_especular = alpha_especular;
-    this.model = null;
-
-    this.pos = [];
-    this.nor = [];
-    this.vao = null;
-
-    this.init = function () {
-        quad(this.pos, this.nor, CUBO_CANTOS, 1, 0, 3, 2);
-        quad(this.pos, this.nor, CUBO_CANTOS, 2, 3, 7, 6);
-        quad(this.pos, this.nor, CUBO_CANTOS, 4, 0, 3, 7);
-        quad(this.pos, this.nor, CUBO_CANTOS, 4, 5, 6, 7);
-        quad(this.pos, this.nor, CUBO_CANTOS, 5, 4, 0, 1);
-
-        this.vao = gl.createVertexArray();
-        gl.bindVertexArray(this.vao);
-
-        const bufVertices = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, bufVertices);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(this.pos), gl.STATIC_DRAW);
-        var aPosition = gl.getAttribLocation(gShader.program, "aPosition");
-        gl.vertexAttribPointer(aPosition, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(aPosition);
-
-        const bufNormais = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, bufNormais);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(this.nor), gl.STATIC_DRAW);
-        const aNormal = gl.getAttribLocation(gShader.program, "aNormal");
-        gl.vertexAttribPointer(aNormal, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(aNormal);
-
-        gl.bindVertexArray(null);
-    };
-
-    this.atualiza_model = function (transformGlobal) {
-        let model = translate(this.posRelativa[0], this.posRelativa[1], this.posRelativa[2]);
-        model = mult(model, rotateX(this.orientacaoRelativa[0]));
-        model = mult(model, rotateY(this.orientacaoRelativa[1]));
-        model = mult(model, rotateZ(this.orientacaoRelativa[2]));
-        model = mult(model, scale(this.escala[0], this.escala[1], this.escala[2]));
-        this.model = mult(transformGlobal, model);
-    };
-    this.desenha = function () {
-        const model = this.model;
-        const modelView = mult(gCtx.view, model);
-        const modelViewInvTrans = transpose(inverse(modelView));
-
-        gl.uniformMatrix4fv(gShader.uView, false, flatten(gCtx.view));
-        gl.uniformMatrix4fv(gShader.uModel, false, flatten(model));
-        gl.uniformMatrix4fv(gShader.uInverseTranspose, false, flatten(modelViewInvTrans));
-
-        gl.uniform4fv(gShader.uCorAmb, mult(LUZ.amb, this.cor_ambiente));
-        gl.uniform4fv(gShader.uCorDif, mult(LUZ.dif, this.cor_difusao));
-        gl.uniform4fv(gShader.uCorEsp, LUZ.esp);
-        gl.uniform1f(gShader.uAlfaEsp, this.alpha_especular);
-
-        gl.bindVertexArray(this.vao);
-        gl.drawArrays(gl.TRIANGLES, 0, this.pos.length);
-        gl.bindVertexArray(null);
-    };
-
-
-}
-function ParteRelativa_teto(posRelativa, orientacaoRelativa, escala, cor_ambiente, cor_difusao, alpha_especular) {
-    this.posRelativa = posRelativa;
-    this.orientacaoRelativa = orientacaoRelativa;
-    this.escala = escala;
-    this.cor_ambiente = cor_ambiente;
-    this.cor_difusao = cor_difusao;
-    this.alpha_especular = alpha_especular;
-    this.model = null;
-
-    this.pos = [];
-    this.nor = [];
-    this.vao = null;
-
-    this.init = function () {
-        quad(this.pos, this.nor, CUBO_CANTOS, 1, 0, 3, 2);
-        quad(this.pos, this.nor, CUBO_CANTOS, 2, 3, 7, 6);
-        quad(this.pos, this.nor, CUBO_CANTOS, 4, 0, 3, 7);
-        quad(this.pos, this.nor, CUBO_CANTOS, 6, 5, 1, 2);
-        quad(this.pos, this.nor, CUBO_CANTOS, 4, 5, 6, 7);
-        quad(this.pos, this.nor, CUBO_CANTOS, 5, 4, 0, 1);
-
-        this.vao = gl.createVertexArray();
-        gl.bindVertexArray(this.vao);
-
-        const bufVertices = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, bufVertices);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(this.pos), gl.STATIC_DRAW);
-        var aPosition = gl.getAttribLocation(gShader.program, "aPosition");
-        gl.vertexAttribPointer(aPosition, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(aPosition);
-
-        const bufNormais = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, bufNormais);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(this.nor), gl.STATIC_DRAW);
-        const aNormal = gl.getAttribLocation(gShader.program, "aNormal");
-        gl.vertexAttribPointer(aNormal, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(aNormal);
-
-        gl.bindVertexArray(null);
-    };
-
-    this.atualiza_model = function (transformGlobal) {
-        let model = translate(this.posRelativa[0], this.posRelativa[1], this.posRelativa[2]);
-        model = mult(model, rotateX(this.orientacaoRelativa[0]));
-        model = mult(model, rotateY(this.orientacaoRelativa[1]));
-        model = mult(model, rotateZ(this.orientacaoRelativa[2]));
-        model = mult(model, scale(this.escala[0], this.escala[1], this.escala[2]));
-        this.model = mult(transformGlobal, model);
-    };
-    this.desenha = function () {
-        const model = this.model;
-        const modelView = mult(gCtx.view, model);
-        const modelViewInvTrans = transpose(inverse(modelView));
-
-        gl.uniformMatrix4fv(gShader.uView, false, flatten(gCtx.view));
-        gl.uniformMatrix4fv(gShader.uModel, false, flatten(model));
-        gl.uniformMatrix4fv(gShader.uInverseTranspose, false, flatten(modelViewInvTrans));
-
-        gl.uniform4fv(gShader.uCorAmb, mult(LUZ.amb, this.cor_ambiente));
-        gl.uniform4fv(gShader.uCorDif, mult(LUZ.dif, this.cor_difusao));
-        gl.uniform4fv(gShader.uCorEsp, LUZ.esp);
-        gl.uniform1f(gShader.uAlfaEsp, this.alpha_especular);
-
-        gl.bindVertexArray(this.vao);
-        gl.drawArrays(gl.TRIANGLES, 0, this.pos.length);
-        gl.bindVertexArray(null);
-    };
-}
-
-
-function ParteCilindrica(posRelativa, orientacaoRelativa, escala, cor_ambiente, cor_difusao, alpha_especular) {
-    this.posRelativa = posRelativa;
-    this.orientacaoRelativa = orientacaoRelativa;
-    this.escala = escala;
-    this.cor_ambiente = cor_ambiente;
-    this.cor_difusao = cor_difusao;
-    this.alpha_especular = alpha_especular;
-    this.model = null;
-
-    this.pos = [];
-    this.nor = [];
-    this.vao = null;
-
-    this.init = function () {
-        geraCilindro(this.pos, this.nor, 1.0, 1.0, 32); // raio, altura, segmentos
-
-        this.vao = gl.createVertexArray();
-        gl.bindVertexArray(this.vao);
-
-        const bufVertices = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, bufVertices);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(this.pos), gl.STATIC_DRAW);
-        const aPosition = gl.getAttribLocation(gShader.program, "aPosition");
-        gl.vertexAttribPointer(aPosition, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(aPosition);
-
-        const bufNormais = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, bufNormais);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(this.nor), gl.STATIC_DRAW);
-        const aNormal = gl.getAttribLocation(gShader.program, "aNormal");
-        gl.vertexAttribPointer(aNormal, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(aNormal);
-
-        gl.bindVertexArray(null);
-    };
-
-    this.atualiza_model = function (transformGlobal) {
-        let model = translate(this.posRelativa[0], this.posRelativa[1], this.posRelativa[2]);
-        model = mult(model, rotateX(this.orientacaoRelativa[0]));
-        model = mult(model, rotateY(this.orientacaoRelativa[1]));
-        model = mult(model, rotateZ(this.orientacaoRelativa[2]));
-        model = mult(model, scale(this.escala[0], this.escala[1], this.escala[2]));
-        this.model = mult(transformGlobal, model);
-    };
-
-    this.desenha = function () {
-        const model = this.model;
-        const modelView = mult(gCtx.view, model);
-        const modelViewInvTrans = transpose(inverse(modelView));
-
-        gl.uniformMatrix4fv(gShader.uView, false, flatten(gCtx.view));
-        gl.uniformMatrix4fv(gShader.uModel, false, flatten(model));
-        gl.uniformMatrix4fv(gShader.uInverseTranspose, false, flatten(modelViewInvTrans));
-
-        gl.uniform4fv(gShader.uCorAmb, mult(LUZ.amb, this.cor_ambiente));
-        gl.uniform4fv(gShader.uCorDif, mult(LUZ.dif, this.cor_difusao));
-        gl.uniform4fv(gShader.uCorEsp, LUZ.esp);
-        gl.uniform1f(gShader.uAlfaEsp, this.alpha_especular);
-
-        gl.bindVertexArray(this.vao);
-        gl.drawArrays(gl.TRIANGLES, 0, this.pos.length);
-        gl.bindVertexArray(null);
-    };
-}
-
-function geraCilindro(pos, nor, raio, altura, segmentos) {
-    const topo = altura / 2;
-    const base = -altura / 2;
-
-    for (let i = 0; i < segmentos; i++) {
-        const theta = (2 * Math.PI * i) / segmentos;
-        const proximo_theta = (2 * Math.PI * (i + 1)) / segmentos;
-
-        const x0 = Math.cos(theta);
-        const z0 = Math.sin(theta);
-        const x1 = Math.cos(proximo_theta);
-        const z1 = Math.sin(proximo_theta);
-
-        // Lateral
-        pos.push(vec4(x0 * raio, base, z0 * raio, 1));
-        pos.push(vec4(x0 * raio, topo, z0 * raio, 1));
-        pos.push(vec4(x1 * raio, topo, z1 * raio, 1));
-        pos.push(vec4(x0 * raio, base, z0 * raio, 1));
-        pos.push(vec4(x1 * raio, topo, z1 * raio, 1));
-        pos.push(vec4(x1 * raio, base, z1 * raio, 1));
-
-        for (let j = 0; j < 6; j++) {
-            nor.push(vec3(x0 + x1, 0, z0 + z1));
+        for (let i = 0; i < this.partes.length; i++) {
+            this.partes[i].desenha();
         }
+    };
 
-        // Base
-        pos.push(vec4(0, base, 0, 1));
-        pos.push(vec4(x1 * raio, base, z1 * raio, 1));
-        pos.push(vec4(x0 * raio, base, z0 * raio, 1));
-
-        nor.push(vec3(0, -1, 0));
-        nor.push(vec3(0, -1, 0));
-        nor.push(vec3(0, -1, 0));
-
-        // Topo
-        pos.push(vec4(0, topo, 0, 1));
-        pos.push(vec4(x0 * raio, topo, z0 * raio, 1));
-        pos.push(vec4(x1 * raio, topo, z1 * raio, 1));
-
-        nor.push(vec3(0, 1, 0));
-        nor.push(vec3(0, 1, 0));
-        nor.push(vec3(0, 1, 0));
-    }
 }
 
