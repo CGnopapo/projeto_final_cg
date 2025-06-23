@@ -121,7 +121,7 @@ function main() {
     gl.enable(gl.DEPTH_TEST);
 
     gLuzGlobal = new LuzGlobal();
-
+    
     crieShaders();
     crieShaders_textura();
     window.onkeydown = moveCamera
@@ -515,6 +515,7 @@ function crieShaders() {
     gl.useProgram(gShader.program);
 
     var aNormal = gl.getAttribLocation(gShader.program, "aNormal");
+    console.log(aNormal);
     gl.vertexAttribPointer(aNormal, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(aNormal);
 
@@ -593,14 +594,18 @@ const float gradiente = 1.0;
 void main() {
     mat4 modelView = uView * uModel;
     vec4 pos = modelView * vec4(aPosition, 1);
+    gl_Position = uPerspective * pos;
+    vNormal = mat3(uInverseTranspose) * aNormal;
     vLight = (uView * uLuzDir).xyz;
     vView = -(pos.xyz);
 
-    vSpotlight1 = (uView * uSpotlight_pos1 - pos).xyz; 
+    vSpotlight1 = (uView * uSpotlight_pos1 - pos).xyz;
+
     vSpotlight_distancia1 = length(vSpotlight1);
     vSpotlight_direcao_view1 = normalize(mat3(uView) * uSpot_light_direcao_mundo_1);
 
-    vSpotlight2 = (uView * uSpotlight_pos2 - pos).xyz; 
+    vSpotlight2 = (uView * uSpotlight_pos2 - pos).xyz;
+
     vSpotlight_distancia2 = length(vSpotlight2);
     vSpotlight_direcao_view2 = normalize(mat3(uView) * uSpot_light_direcao_mundo_2);
 

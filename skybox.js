@@ -92,7 +92,10 @@ function Skybox() {
         gl.useProgram(this.program);
         gl.bindVertexArray(this.vao);
 
-        let tempo = (Date.now() / 2) % 24000;
+        const DURACAO_DIA = 48000;
+        const DURACAO_TRANSICAO = 2000;
+
+        let tempo = (Date.now() / 2) % DURACAO_DIA;
 
         let view = gCtx.view;
         view[0][3] = 0;
@@ -114,17 +117,17 @@ function Skybox() {
         gl.uniform1i(this.attribs.skyboxNoite, NOITE_ID);
 
         let fator;
-        if (tempo < 12000) {
+        if (tempo < DURACAO_DIA / 2) {
             fator = 0;
         }
-        else if (tempo < 13000) {
-            fator = (tempo - 12000) / 1000;
+        else if (tempo < (DURACAO_DIA / 2) + DURACAO_TRANSICAO) {
+            fator = (tempo - (DURACAO_DIA / 2)) / DURACAO_TRANSICAO;
         }
-        else if (tempo < 23000) {
+        else if (tempo < DURACAO_DIA - DURACAO_TRANSICAO) {
             fator = 1;
         }
         else {
-            fator = 1 - (tempo - 23000) / 1000;
+            fator = 1 - (tempo - DURACAO_DIA + DURACAO_TRANSICAO) / DURACAO_TRANSICAO;
         }
 
         gl.uniform1f(this.attribs.fatorDiaNoite, fator);
@@ -135,11 +138,11 @@ function Skybox() {
         gl.drawArrays(gl.TRIANGLES, 0, VERTICES.length);
         gl.bindVertexArray(null);
 
-        gSol.mudaProgresso(tempo / 24000);
-        gLua.mudaProgresso(((tempo + 12000) % 24000) / 24000);
+        gSol.mudaProgresso(tempo / DURACAO_DIA);
+        gLua.mudaProgresso(((tempo + (DURACAO_DIA / 2)) % DURACAO_DIA) / DURACAO_DIA);
 
         gLuzGlobal.mistura(fator);
-        gLuzGlobal.mudaProgresso(((tempo + 400) % 12000) / 12000);
+        gLuzGlobal.mudaProgresso((((tempo + (DURACAO_TRANSICAO / 2)) + (DURACAO_DIA / 2)) % (DURACAO_DIA / 2)) / (DURACAO_DIA / 2));
         gLuzGlobal.atualizaUniformesDo(gShader.program);
         gLuzGlobal.atualizaUniformesDo(gShaderTextura.program);
 
