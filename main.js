@@ -327,6 +327,7 @@ function render_auxiliar(){
 }
 
 function render(delta) {
+
     if (gJacolidiu){
         return
     }
@@ -344,9 +345,6 @@ function render(delta) {
         botao_pause.disabled = true;
         return;
     }
-
-    gl.enable(gl.CULL_FACE);
-    gl.enable(gl.DEPTH_TEST);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gSkybox.desenha();
     atualiza_camera(delta)
