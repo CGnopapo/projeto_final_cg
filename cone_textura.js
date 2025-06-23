@@ -1,12 +1,9 @@
-function Cone_textura(posicao, orientacao, escala, escala_tex = 1, detalhe = 2, id_tex = 3, cor_ambiente, cor_difusao, alpha_especular, textura, e_da_internet, fator_sway = 1) {
+function Cone_textura(escala_tex = 1, detalhe = 2, id_tex = 3, cor_ambiente, cor_difusao, alpha_especular, textura, e_da_internet, fator_sway = 1) {
     this.e_da_internet = e_da_internet;
     this.textura = textura;
     this.cor_ambiente = cor_ambiente;
     this.cor_difusao = cor_difusao;
     this.alpha_especular = alpha_especular;
-    this.posicao = posicao;
-    this.escala = escala;
-    this.orientacao = orientacao;
     this.pos = [];
     this.nor = [];
     this.textura_st = [];
@@ -16,7 +13,7 @@ function Cone_textura(posicao, orientacao, escala, escala_tex = 1, detalhe = 2, 
     this.id_tex = id_tex;
     this.escala_tex = escala_tex;
     this.fator_sway = fator_sway;
-    
+
     this.init = function () {
         const TOPO = vec4(0, .5, 0, 1);
         const BASE = vec4(0, -.5, 0, 1);
@@ -84,16 +81,18 @@ function Cone_textura(posicao, orientacao, escala, escala_tex = 1, detalhe = 2, 
         this.sway();
     }
 
-    this.atualiza_model = function () {
-        let model = translate(this.posicao[0], this.posicao[1], this.posicao[2]);
-        model = mult(model, rotateX(this.orientacao[0]))
-        model = mult(model, rotateY(this.orientacao[1]))
-        model = mult(model, rotateZ(this.orientacao[2]))
-        model = mult(model, scale(this.escala[0],this.escala[1],this.escala[2]));
+    this.atualiza_model = function (posicao, orientacao, escala) {
+        let model = translate(posicao[0], posicao[1], posicao[2]);
+        model = mult(model, rotateX(orientacao[0]))
+        model = mult(model, rotateY(orientacao[1]))
+        model = mult(model, rotateZ(orientacao[2]))
+        model = mult(model, scale(escala[0],escala[1],escala[2]));
         this.model = model;
     }
+
     this.desenha = function () {
         gl.useProgram(gShaderTextura.program);
+
         const model = this.model;
         const modelView = mult(gCtx.view, model);
         const modelViewInvTrans = transpose(inverse(modelView));

@@ -1,35 +1,36 @@
 function Floresta(num_arvores, dist_max) {
     this.num_arvores = num_arvores;
     this.dist_max = dist_max;
-    this.arvores = [];
+    this.origens_arvores = [];
+    this.tamanhos_arvores = [];
+    this.arvore = new Arvore(dist_max);
 
     this.init = function () {
         for (let i = 0; i < this.num_arvores; i++) {
-            let arvore = new Arvore(
-                this.geraPosicaoAleatoria(),
-                // Aqui deve ser aleatório
-                1,
-                this.dist_max
-            );
-            arvore.init();
-            this.arvores.push(arvore);
+            this.origens_arvores.push(this.geraPosicaoAleatoria());
+            this.tamanhos_arvores.push(this.geraTamanhoAleatorio());
         }
     };
+
     this.adiciona_ao_cenario = function () {
         gObjetos.push(this);
     };
 
     // Joga parte da pista para frente do caminhão
     this.atualiza_posicao_orientacao = function (delta) {
-        this.arvores.forEach(parte => parte.atualiza_posicao_orientacao());
+        this.origens_arvores.forEach((origem, indice, array) => {
+            const ponto_corte = caminhao.posicao[0] + this.dist_max;
+            if (origem[0] > ponto_corte) {
+                array[indice][0] -= 2 * this.dist_max;
+            }
+        });
     };
 
     this.atualiza_model = function () {
-        this.arvores.forEach(parte => parte.atualiza_model());
     };
 
     this.desenha = function () {
-        this.arvores.forEach(parte => parte.desenha());
+        this.origens_arvores.forEach((origem, indice) => this.arvore.desenha(origem, this.tamanhos_arvores[indice]));
     };
 
     // Alguns auxiliares
@@ -41,5 +42,14 @@ function Floresta(num_arvores, dist_max) {
 
         // Example usage: randomInRange(-10, 10)
         return vec3(x, 0, z);
+    };
+
+    this.geraTamanhoAleatorio = function () {
+        const min = -.2;
+        const max = .6;
+        const x = Math.random() * (max - min) + min;
+
+        // Example usage: randomInRange(-10, 10)
+        return 1 + x;
     };
 }
