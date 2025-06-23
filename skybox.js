@@ -1,7 +1,5 @@
 function Skybox() {
-    /* 
-        Required constants
-    */
+
     const DIA_ID = 4;
     const NOITE_ID = 5;
 
@@ -54,9 +52,6 @@ function Skybox() {
         [ 1,  1],
     ];
 
-    /*
-        Attributes and methods
-    */
     this.program = makeProgram(gl, gSkyboxVertexShaderSource, gSkyboxFragmentShaderSource);
 
     this.init = function () {
@@ -106,18 +101,15 @@ function Skybox() {
         let viewDirectionProjectionMatrix = mult(gCtx.perspective, view);
         this.orientacao += .01;
         let rotacao = rotateY(this.orientacao);
-        // let rotacao = rotateY(0);
         viewDirectionProjectionMatrix = mult(viewDirectionProjectionMatrix, rotacao);
         let viewDirectionProjectionInverseMatrix = inverse(viewDirectionProjectionMatrix);
 
-        // Set the uniforms
         gl.uniformMatrix4fv(
             this.attribs.projInverse, 
             false,
             flatten(viewDirectionProjectionInverseMatrix)
         );
 
-        // Tell the shader to use texture unit 0 for u_skybox
         gl.uniform1i(this.attribs.skyboxDia, DIA_ID);
         gl.uniform1i(this.attribs.skyboxNoite, NOITE_ID);
 
@@ -138,7 +130,6 @@ function Skybox() {
         gl.uniform1f(this.attribs.fatorDiaNoite, fator);
         gl.uniform4fv(this.attribs.corNeblina, FUNDO);
 
-        // let our quad pass the depth test at 1.0
         gl.depthFunc(gl.LEQUAL);
 
         gl.drawArrays(gl.TRIANGLES, 0, VERTICES.length);
@@ -155,7 +146,6 @@ function Skybox() {
         infosFaces.forEach((faceInfo) => {
             const {target, url} = faceInfo;
 
-            // Upload the canvas to the cubemap face.
             const level = 0;
             const internalFormat = gl.RGBA;
             const width = 512;
@@ -163,15 +153,12 @@ function Skybox() {
             const format = gl.RGBA;
             const type = gl.UNSIGNED_BYTE;
 
-            // setup each face so it's immediately renderable
             gl.texImage2D(target, level, internalFormat, width, height, 0, format, type, null);
 
-            // Asynchronously load an image
             const image = new Image();
             image.crossOrigin = '';
             image.src = url;
             image.addEventListener('load', function() {
-                // Now that the image has loaded make copy it to the texture.
                 gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
                 gl.texImage2D(target, level, internalFormat, format, type, image);
                 gl.generateMipmap(gl.TEXTURE_CUBE_MAP);

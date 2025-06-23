@@ -49,7 +49,7 @@ out vec2 vTexCoord;
 out float visibilidade;
 
 const float densidade = 0.01;
-const float gradiente = 2.0;
+const float gradiente = 1.0;
 
 void main() {
     mat4 modelView = uView * uModel;
