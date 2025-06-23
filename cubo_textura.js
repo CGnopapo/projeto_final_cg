@@ -48,7 +48,7 @@ out vec2 vTexCoord;
 
 out float visibilidade;
 
-const float densidade = 0.02;
+const float densidade = 0.01;
 const float gradiente = 2.0;
 
 void main() {
