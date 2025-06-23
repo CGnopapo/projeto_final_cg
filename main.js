@@ -3,15 +3,16 @@ const FUNDO = [.6, .78, .76, 1];
 // const FUNDO = [0, 0, 0, 1];
 
 const LUZ = {
-    pos: vec4(100, 100.0,100, 1),
-    amb: vec4(0.2, 0.2, 0.2, 1.0),
-    dif: vec4(0.5, 0.5, 0.5, 1.0),
-    esp: vec4(0.5, 0.5, 0.5, 1.0),
+    pos: vec4(-50.0, 20.0, 10.0, 0.0),
+    amb: vec4(0.5, 0.5, 0.57, 1.0),
+    dif: vec4(1.0, 1.0, 0.8, 1.0),
+    esp: vec4(0.9, 0.9, 0.7, .0),
+    // esp: vec4(0.0, 0.0, 0.0, .0),
 };
 
 const MAT = {
     amb: vec4(0.8, 0.8, 0.8, 1.0),
-    dif: vec4(1.0, 0.0, 1.0, 1.0),
+    dif: vec4(0.8, 0.8, 0.8, 1.0),
     alfa: 50.0,
 };
 
@@ -25,7 +26,7 @@ var gShader = {
     uView: null,
     uPerspective: null,
     uInverseTranspose: null,
-    uLuzPos: null,
+    uLuzDir: null,
     uCorAmb: null,
     uCorDif: null,
     uCorEsp: null,
@@ -93,6 +94,10 @@ const CAM = {
 let gPausado = false;
 let caminhao;
 
+var gLuzGlobal;
+var gSol;
+var gLua;
+
 
 ////!!!!!!!!!! falta atenuação do spot light
 var farol_caminhao={
@@ -114,6 +119,8 @@ function main() {
     gl.viewport(0, 0, gCanvas.width, gCanvas.height);
     gl.clearColor(FUNDO[0], FUNDO[1], FUNDO[2], FUNDO[3]);
     gl.enable(gl.DEPTH_TEST);
+
+    gLuzGlobal = new LuzGlobal();
 
     crieShaders();
     crieShaders_textura();
@@ -170,10 +177,20 @@ function main() {
         20, // comprimento de cada cubo
         vec4(1, 1, 1, 1.0), // cor ambiente
         vec4(1, 1, 1, 1.0), // cor difusa
-        10 // alpha especular
+        100 // alpha especular
     );
     pista.init();
     pista.adiciona_ao_cenario();
+
+    const SOL_ESCALA = 8;
+    gSol = new Esfera(vec3(300, 0, 0), vec3(0, 0, 0), vec3(SOL_ESCALA, SOL_ESCALA, SOL_ESCALA), vec4(0.99, 0.94, 0.78, .3), 3);
+    gSol.init();
+    gSol.adiciona_ao_cenario();
+
+    const LUA_ESCALA = 4;
+    gLua = new Esfera(vec3(300, 0, 0), vec3(0, 0, 0), vec3(LUA_ESCALA, LUA_ESCALA, LUA_ESCALA), vec4(0.55, 0.73, 0.94, .3), 3);
+    gLua.init();                                                                                    // 0.5, 0.7, 0.8
+    gLua.adiciona_ao_cenario();
     
     init_farol_caminhao()
     render_auxiliar();
@@ -341,8 +358,8 @@ function crieShaders() {
     gCtx.view = lookAt(gcamera_modos[modo_camera].eye, gcamera_modos[modo_camera].at, gcamera_modos[modo_camera].up);
     gl.uniformMatrix4fv(gShader.uView, false, flatten(gCtx.view));
 
-    gShader.uLuzPos = gl.getUniformLocation(gShader.program, "uLuzPos");
-    gl.uniform4fv(gShader.uLuzPos, LUZ.pos);
+    gShader.uLuzDir = gl.getUniformLocation(gShader.program, "uLuzDir");
+    gl.uniform4fv(gShader.uLuzDir, gLuzGlobal.dir());
 
     gShader.uCorAmb = gl.getUniformLocation(gShader.program, "uCorAmbiente");
     gShader.uCorDif = gl.getUniformLocation(gShader.program, "uCorDifusao");
@@ -378,7 +395,7 @@ uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uPerspective;
 uniform mat4 uInverseTranspose;
-uniform vec4 uLuzPos;
+uniform vec4 uLuzDir;
 out vec3 vNormal;
 out vec3 vLight;
 out vec3 vView;
@@ -395,7 +412,7 @@ void main() {
     gl_Position = uPerspective * modelView * vec4(aPosition, 1);
     vNormal = mat3(uInverseTranspose) * aNormal;
     vec4 pos = modelView * vec4(aPosition, 1);
-    vLight = (uView * uLuzPos - pos).xyz;
+    vLight = (uView * uLuzDir).xyz;
     vView = -(pos.xyz);
 
     vSpotLight1 = (uView * uSpotLightPos1 - pos).xyz; 

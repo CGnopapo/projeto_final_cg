@@ -79,10 +79,10 @@ function Skybox() {
         gl.enableVertexAttribArray(this.attribs.position);
 
         let diaInfos = this.geraInfosFacesSkybox('skybox_day');
-        this.carregaInfosFacesSkybox(diaInfos, 0);
+        this.carregaInfosFacesSkybox(diaInfos, 1);
 
         let noiteInfos = this.geraInfosFacesSkybox('skybox_night');
-        this.carregaInfosFacesSkybox(noiteInfos, 1);
+        this.carregaInfosFacesSkybox(noiteInfos, 0);
 
         gl.bindVertexArray(null);
     };
@@ -106,8 +106,8 @@ function Skybox() {
         );
 
         // Tell the shader to use texture unit 0 for u_skybox
-        gl.uniform1i(this.attribs.skyboxDia, 0);
-        gl.uniform1i(this.attribs.skyboxNoite, 1);
+        gl.uniform1i(this.attribs.skyboxNoite, 0);
+        gl.uniform1i(this.attribs.skyboxDia, 1);
 
         let fator;
         if (tempo < 12000) {
@@ -125,13 +125,21 @@ function Skybox() {
         // console.log(fator, tempo);
 
         gl.uniform1f(this.attribs.fatorDiaNoite, fator);
-        gl.uniform3fv(this.attribs.corNeblina, vec3(.5, 0, .5));
+        gl.uniform3fv(this.attribs.corNeblina, vec3(.7, .7, .7));
 
         // let our quad pass the depth test at 1.0
         gl.depthFunc(gl.LEQUAL);
 
         gl.drawArrays(gl.TRIANGLES, 0, VERTICES.length);
         gl.bindVertexArray(null);
+
+        gSol.mudaProgresso(tempo / 24000);
+        gLua.mudaProgresso(((tempo + 12000) % 24000) / 24000);
+
+        gLuzGlobal.mistura(fator);
+        gLuzGlobal.mudaProgresso(((tempo + 400) % 12000) / 12000);
+        gLuzGlobal.atualizaUniformesDo(gShader.program);
+        gLuzGlobal.atualizaUniformesDo(gShaderTextura.program);
 
         gl.useProgram(gShader.program);
     };

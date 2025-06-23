@@ -192,9 +192,9 @@ function ParteRelativa(posRelativa, orientacaoRelativa, escala, cor_ambiente, co
         gl.uniformMatrix4fv(gShader.uModel, false, flatten(model));
         gl.uniformMatrix4fv(gShader.uInverseTranspose, false, flatten(modelViewInvTrans));
 
-        gl.uniform4fv(gShader.uCorAmb, mult(LUZ.amb, this.cor_ambiente));
-        gl.uniform4fv(gShader.uCorDif, mult(LUZ.dif, this.cor_difusao));
-        gl.uniform4fv(gShader.uCorEsp, LUZ.esp);
+        gl.uniform4fv(gShader.uCorAmb, mult(gLuzGlobal.amb(), this.cor_ambiente));
+        gl.uniform4fv(gShader.uCorDif, mult(gLuzGlobal.dif(), this.cor_difusao));
+        gl.uniform4fv(gShader.uCorEsp, gLuzGlobal.esp());
         gl.uniform1f(gShader.uAlfaEsp, this.alpha_especular);
 
         gl.bindVertexArray(this.vao);
@@ -262,9 +262,9 @@ function ParteRelativa_teto(posRelativa, orientacaoRelativa, escala, cor_ambient
         gl.uniformMatrix4fv(gShader.uModel, false, flatten(model));
         gl.uniformMatrix4fv(gShader.uInverseTranspose, false, flatten(modelViewInvTrans));
 
-        gl.uniform4fv(gShader.uCorAmb, mult(LUZ.amb, this.cor_ambiente));
-        gl.uniform4fv(gShader.uCorDif, mult(LUZ.dif, this.cor_difusao));
-        gl.uniform4fv(gShader.uCorEsp, LUZ.esp);
+        gl.uniform4fv(gShader.uCorAmb, mult(gLuzGlobal.amb(), this.cor_ambiente));
+        gl.uniform4fv(gShader.uCorDif, mult(gLuzGlobal.dif(), this.cor_difusao));
+        gl.uniform4fv(gShader.uCorEsp, gLuzGlobal.esp());
         gl.uniform1f(gShader.uAlfaEsp, this.alpha_especular);
 
         gl.bindVertexArray(this.vao);
@@ -328,9 +328,9 @@ function ParteCilindrica(posRelativa, orientacaoRelativa, escala, cor_ambiente, 
         gl.uniformMatrix4fv(gShader.uModel, false, flatten(model));
         gl.uniformMatrix4fv(gShader.uInverseTranspose, false, flatten(modelViewInvTrans));
 
-        gl.uniform4fv(gShader.uCorAmb, mult(LUZ.amb, this.cor_ambiente));
-        gl.uniform4fv(gShader.uCorDif, mult(LUZ.dif, this.cor_difusao));
-        gl.uniform4fv(gShader.uCorEsp, LUZ.esp);
+        gl.uniform4fv(gShader.uCorAmb, mult(gLuzGlobal.amb(), this.cor_ambiente));
+        gl.uniform4fv(gShader.uCorDif, mult(gLuzGlobal.dif(), this.cor_difusao));
+        gl.uniform4fv(gShader.uCorEsp, gLuzGlobal.esp());
         gl.uniform1f(gShader.uAlfaEsp, this.alpha_especular);
 
         gl.bindVertexArray(this.vao);
