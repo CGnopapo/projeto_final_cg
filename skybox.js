@@ -72,7 +72,6 @@ function Skybox() {
 
         const bufVertices = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, bufVertices);
-        console.log(flatten(VERTICES));
         gl.bufferData(gl.ARRAY_BUFFER, flatten(VERTICES), gl.STATIC_DRAW);
 
         gl.vertexAttribPointer(this.attribs.position, 2, gl.FLOAT, false, 0, 0);
@@ -112,7 +111,7 @@ function Skybox() {
             false,
             flatten(viewDirectionProjectionInverseMatrix)
         );
-
+      
         gl.uniform1i(this.attribs.skyboxDia, DIA_ID);
         gl.uniform1i(this.attribs.skyboxNoite, NOITE_ID);
 

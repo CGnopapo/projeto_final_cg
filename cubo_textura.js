@@ -266,6 +266,7 @@ function Cubo_textura(posicao,orientacao,velo_trans, vel_rotacao, escala, cor_am
         gl.uniform4fv(gShaderTextura.uCorDif, mult(gLuzGlobal.dif(), this.cor_difusao));
         gl.uniform4fv(gShaderTextura.uCorEsp, gLuzGlobal.esp());
         gl.uniform1f(gShaderTextura.uAlfaEsp, this.alpha_especular);
+        gl.uniform1i(gl.getUniformLocation(gShaderTextura.program, "uTextureMap"), 0);
 
         gl.bindVertexArray(this.vao);
         gl.drawArrays(gl.TRIANGLES, 0, this.pos.length);

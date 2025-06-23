@@ -271,6 +271,10 @@ function main() {
     pista.init();
     pista.adiciona_ao_cenario();
 
+    let floresta = new Floresta(10, 60);
+    floresta.init();
+    floresta.adiciona_ao_cenario();
+
     const SOL_ESCALA = 8;
     gSol = new Esfera(vec3(300, 0, 0), vec3(0, 0, 0), vec3(SOL_ESCALA, SOL_ESCALA, SOL_ESCALA), vec4(0.99, 0.94, 0.78, .3), 3);
     gSol.init();
