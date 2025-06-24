@@ -86,8 +86,6 @@ let gJacolidiu = false;
 let gPausado = false;
 let caminhao;
 
-var gFloresta;
-
 var gLuzGlobal;
 var gSol;
 var gLua;
@@ -282,9 +280,13 @@ function main() {
     gLua.init();                                                                                    // 0.5, 0.7, 0.8
     gLua.adiciona_ao_cenario();
 
-    gFloresta = new Floresta(0, 200);
-    gFloresta.init();
-    gFloresta.adiciona_ao_cenario();
+    let floresta_lado_direito = new Floresta(0, 200);
+    floresta_lado_direito.init();
+
+    floresta_lado_direito.adiciona_ao_cenario();
+    let floresta_lado_esquerdo = new Floresta(0, 200);
+    floresta_lado_esquerdo.init();
+    floresta_lado_esquerdo.adiciona_ao_cenario();
     
     init_farol_caminhao()
     let textura_terreno = new Image();
@@ -294,12 +296,12 @@ function main() {
     const largura_faixa_terreno = 300.0; 
 
     // Cria um gerenciador de terreno para o lado direito da pista
-    let gerenciador_lado_direito = new Gerenciador_terreno(textura_terreno, 'direito', largura_pista, largura_faixa_terreno);
+    let gerenciador_lado_direito = new Gerenciador_terreno(textura_terreno, 'direito', largura_pista, largura_faixa_terreno, floresta_lado_direito);
     gerenciador_lado_direito.init();
     gerenciador_lado_direito.adiciona_ao_cenario();
 
     // Cria um gerenciador de terreno para o lado esquerdo da pista
-    let gerenciador_lado_esquerdo = new Gerenciador_terreno(textura_terreno, 'esquerdo', largura_pista, largura_faixa_terreno);
+    let gerenciador_lado_esquerdo = new Gerenciador_terreno(textura_terreno, 'esquerdo', largura_pista, largura_faixa_terreno, floresta_lado_esquerdo);
     gerenciador_lado_esquerdo.init();
     gerenciador_lado_esquerdo.adiciona_ao_cenario();
 

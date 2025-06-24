@@ -1,9 +1,10 @@
-function Gerenciador_terreno(textura, lado, largura_pista, largura_faixa) {
+function Gerenciador_terreno(textura, lado, largura_pista, largura_faixa, floresta) {
     this.terrenos = [];
     this.textura = textura;
     this.lado = lado;
     this.largura_pista = largura_pista;
     this.largura_faixa = largura_faixa;
+    this.floresta = floresta;
 
     this.quantidade_emX = 30;
     this.quantidade_emZ = 30;
@@ -40,7 +41,7 @@ function Gerenciador_terreno(textura, lado, largura_pista, largura_faixa) {
             this.textura,
             false
         );
-        novo_terreno.init();
+        novo_terreno.init(this.floresta);
         this.terrenos.push(novo_terreno);
     };
 
@@ -58,8 +59,13 @@ function Gerenciador_terreno(textura, lado, largura_pista, largura_faixa) {
             let bordaDianteiraDoTerrenoDeTras = terreno_de_tras.posicao[0] - this.tamanhoX / 2;
 
             if (novo_caminhao_em_x < bordaDianteiraDoTerrenoDeTras) {
+                console.log(this.floresta.origens_arvores.length, "antes");
                 this.terrenos.splice(0, 1);
-                gFloresta.origens_arvores.splice(0, gFloresta.origens_arvores.length / 4);
+                const QTDE_REMOCAO = this.quantidade_emX * this.quantidade_emZ / 7;
+                this.floresta.origens_arvores.splice(0, QTDE_REMOCAO);
+                this.floresta.tamanhos_arvores.splice(0, QTDE_REMOCAO);
+                // this.floresta.origens_arvores = this.floresta.origens_arvores.filter(origem => origem[0] >= bordaDianteiraDoTerrenoDeTras);
+                console.log(this.floresta.origens_arvores.length, "depois");
             }
         }
     };

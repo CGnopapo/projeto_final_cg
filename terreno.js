@@ -25,7 +25,7 @@ function Terreno(posicao, lado, largura_pista, largura_faixa, quantidade_em_x, q
         return Math.sin(x / escala) * Math.cos(z / escala) * this.altura_maxima;
     };
 
-    this.geraMalha = function() {
+    this.geraMalha = function(floresta) {
         this.vertices = [];
         this.normais = [];
         this.indices = [];
@@ -68,10 +68,10 @@ function Terreno(posicao, lado, largura_pista, largura_faixa, quantidade_em_x, q
                     }
                 }
                 
-                if (indice_x > 0 && indice_z % 2 == 1 && indice_z < this.quantidade_em_z / 4) {
+                if (indice_z % 2 == 1 && indice_z < this.quantidade_em_z / 4) {
                     let p = vec3(this.posicao[0] + vertices_q[0][0], vertices_q[0][1], vertices_q[0][2]);
-                    gFloresta.origens_arvores.push(p);
-                    gFloresta.tamanhos_arvores.push(gFloresta.geraTamanhoAleatorio());
+                    floresta.origens_arvores.push(p);
+                    floresta.tamanhos_arvores.push(floresta.geraTamanhoAleatorio());
                 }
 
                 let v0 = vertices_q[0]; 
@@ -99,9 +99,9 @@ function Terreno(posicao, lado, largura_pista, largura_faixa, quantidade_em_x, q
     };
 
     
-    this.init = function() {
+    this.init = function(floresta) {
         gl.useProgram(gShaderTextura.program);
-        this.geraMalha();
+        this.geraMalha(floresta);
 
         if (this.e_da_internet) {
             this.texture = configura_texturaDaURL(this.textura);
