@@ -52,6 +52,8 @@ function Skybox() {
         [ 1,  1],
     ];
 
+    this.fator_dia_noite = 0;
+    this.progresso_tempo = 0;
     this.program = makeProgram(gl, gSkyboxVertexShaderSource, gSkyboxFragmentShaderSource);
 
     this.init = function () {
@@ -87,14 +89,20 @@ function Skybox() {
         gl.useProgram(gShader.program);
     };
 
+    this.atualiza = function (delta) {
+        const FATOR_PASSAGEM_TEMPO = 0.03;
+        this.progresso_tempo += FATOR_PASSAGEM_TEMPO * delta;
+        if (this.progresso_tempo > 1) {
+            this.progresso_tempo = 0;
+        }
+    };
+
     this.desenha = function () {
         gl.useProgram(this.program);
         gl.bindVertexArray(this.vao);
 
         const DURACAO_DIA = 48000;
         const DURACAO_TRANSICAO = 2000;
-
-        let tempo = (Date.now() / 2) % DURACAO_DIA;
 
         let view = gCtx.view;
         view[0][3] = 0;
@@ -115,21 +123,22 @@ function Skybox() {
         gl.uniform1i(this.attribs.skyboxDia, DIA_ID);
         gl.uniform1i(this.attribs.skyboxNoite, NOITE_ID);
 
-        let fator;
-        if (tempo < DURACAO_DIA / 2) {
-            fator = 0;
+        const LIMITE_DIA = .5 - DURACAO_TRANSICAO / DURACAO_DIA;
+        const LIMITE_NOITE = 1 - DURACAO_TRANSICAO / DURACAO_DIA;
+        if (this.progresso_tempo < LIMITE_DIA) {
+            this.fator_dia_noite = 0;
         }
-        else if (tempo < (DURACAO_DIA / 2) + DURACAO_TRANSICAO) {
-            fator = (tempo - (DURACAO_DIA / 2)) / DURACAO_TRANSICAO;
+        else if (this.progresso_tempo < .5) {
+            this.fator_dia_noite = (this.progresso_tempo - LIMITE_DIA) / (DURACAO_TRANSICAO / DURACAO_DIA);
         }
-        else if (tempo < DURACAO_DIA - DURACAO_TRANSICAO) {
-            fator = 1;
+        else if (this.progresso_tempo < LIMITE_NOITE) {
+            this.fator_dia_noite = 1;
         }
         else {
-            fator = 1 - (tempo - DURACAO_DIA + DURACAO_TRANSICAO) / DURACAO_TRANSICAO;
+            this.fator_dia_noite = 1 - (this.progresso_tempo - LIMITE_NOITE) / (DURACAO_TRANSICAO / DURACAO_DIA);
         }
 
-        gl.uniform1f(this.attribs.fatorDiaNoite, fator);
+        gl.uniform1f(this.attribs.fatorDiaNoite, this.fator_dia_noite);
         gl.uniform4fv(this.attribs.corNeblina, FUNDO);
 
         gl.depthFunc(gl.LEQUAL);
@@ -137,55 +146,58 @@ function Skybox() {
         gl.drawArrays(gl.TRIANGLES, 0, VERTICES.length);
         gl.bindVertexArray(null);
 
-        gSol.mudaProgresso(tempo / DURACAO_DIA);
-        gLua.mudaProgresso(((tempo + (DURACAO_DIA / 2)) % DURACAO_DIA) / DURACAO_DIA);
+        gSol.mudaProgresso(this.progresso_tempo);
+        let progresso_atrasado = this.progresso_tempo < .5 ? this.progresso_tempo + .5 : this.progresso_tempo - .5;
+        gLua.mudaProgresso(progresso_atrasado);
 
-        gLuzGlobal.mistura(fator);
-        gLuzGlobal.mudaProgresso((((tempo + (DURACAO_TRANSICAO / 2)) + (DURACAO_DIA / 2)) % (DURACAO_DIA / 2)) / (DURACAO_DIA / 2));
+        gLuzGlobal.mistura(this.fator_dia_noite);
+        let offset_intervalo = (DURACAO_TRANSICAO / DURACAO_DIA) / 2;
+        let progresso_luz = this.progresso_tempo < .5 - offset_intervalo ? this.progresso_tempo + .5 - offset_intervalo : this.progresso_tempo - .5 + offset_intervalo
+        gLuzGlobal.mudaProgresso(progresso_luz);
         gLuzGlobal.atualizaUniformesDo(gShader.program);
         gLuzGlobal.atualizaUniformesDo(gShaderTextura.program);
 
         gl.useProgram(gShader.program);
     };
 
-this.carregaInfosFacesSkybox = function (infosFaces, id) {
-    var texture = gl.createTexture();
-    gl.activeTexture(gl.TEXTURE0 + id);
-    gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
+    this.carregaInfosFacesSkybox = function (infosFaces, id) {
+        var texture = gl.createTexture();
+        gl.activeTexture(gl.TEXTURE0 + id);
+        gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
 
-    let facesCarregadas = 0; // 1. Adiciona um contador
+        let facesCarregadas = 0; // 1. Adiciona um contador
 
-    infosFaces.forEach((faceInfo) => {
-        const {target, url} = faceInfo;
+        infosFaces.forEach((faceInfo) => {
+            const {target, url} = faceInfo;
 
-        const level = 0;
-        const internalFormat = gl.RGBA;
-        const width = 512;
-        const height = 512;
-        const format = gl.RGBA;
-        const type = gl.UNSIGNED_BYTE;
+            const level = 0;
+            const internalFormat = gl.RGBA;
+            const width = 512;
+            const height = 512;
+            const format = gl.RGBA;
+            const type = gl.UNSIGNED_BYTE;
 
-        // Define a textura com um placeholder (pixel azul) enquanto a imagem carrega
-        gl.texImage2D(target, level, internalFormat, width, height, 0, format, type, null);
+            // Define a textura com um placeholder (pixel azul) enquanto a imagem carrega
+            gl.texImage2D(target, level, internalFormat, width, height, 0, format, type, null);
 
-        const image = new Image();
-        image.crossOrigin = '';
-        image.src = url;
-        image.addEventListener('load', function() {
-            // Quando a imagem carregar, a envia para a face correta da textura
-            gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
-            gl.texImage2D(target, level, internalFormat, format, type, image);
+            const image = new Image();
+            image.crossOrigin = '';
+            image.src = url;
+            image.addEventListener('load', function() {
+                // Quando a imagem carregar, a envia para a face correta da textura
+                gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
+                gl.texImage2D(target, level, internalFormat, format, type, image);
 
-            facesCarregadas++; // 2. Incrementa o contador
-            if (facesCarregadas === 6) {
-                // 3. Quando todas as 6 faces carregarem, gera o mipmap e configura os parâmetros
-                gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
-                gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-            }
+                facesCarregadas++; // 2. Incrementa o contador
+                if (facesCarregadas === 6) {
+                    // 3. Quando todas as 6 faces carregarem, gera o mipmap e configura os parâmetros
+                    gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+                    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+                }
+            });
         });
-    });
-    // 4. Remove as chamadas que estavam aqui, pois agora são feitas dentro do 'if'
-};
+        // 4. Remove as chamadas que estavam aqui, pois agora são feitas dentro do 'if'
+    };
 
     this.geraInfosFacesSkybox = function (diretorio) {
         return [

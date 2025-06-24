@@ -439,6 +439,7 @@ function render(delta) {
         return;
     }
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gSkybox.atualiza(delta);
     gSkybox.desenha();
     atualiza_camera(delta)
     atualiza_farol_caminhao(delta);
