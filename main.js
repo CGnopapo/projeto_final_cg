@@ -86,10 +86,11 @@ let gJacolidiu = false;
 let gPausado = false;
 let caminhao;
 
+var gFloresta;
+
 var gLuzGlobal;
 var gSol;
 var gLua;
-
 
 var farol_caminhao={
     pos1: vec4(0,-0.5,-0.65,1), // posição da frente do caminhão
@@ -271,10 +272,6 @@ function main() {
     pista.init();
     pista.adiciona_ao_cenario();
 
-    let floresta = new Floresta(10, 60);
-    floresta.init();
-    floresta.adiciona_ao_cenario();
-
     const SOL_ESCALA = 8;
     gSol = new Esfera(vec3(300, 0, 0), vec3(0, 0, 0), vec3(SOL_ESCALA, SOL_ESCALA, SOL_ESCALA), vec4(0.99, 0.94, 0.78, .3), 3);
     gSol.init();
@@ -284,6 +281,10 @@ function main() {
     gLua = new Esfera(vec3(300, 0, 0), vec3(0, 0, 0), vec3(LUA_ESCALA, LUA_ESCALA, LUA_ESCALA), vec4(0.55, 0.73, 0.94, .3), 3);
     gLua.init();                                                                                    // 0.5, 0.7, 0.8
     gLua.adiciona_ao_cenario();
+
+    gFloresta = new Floresta(0, 200);
+    gFloresta.init();
+    gFloresta.adiciona_ao_cenario();
     
     init_farol_caminhao()
     let textura_terreno = new Image();
@@ -472,6 +473,8 @@ function atualiza_camera(delta) {
         const a_rotacionado = mult(R_camera, a);
         const eye = add(at, vec3(a_rotacionado[0], a_rotacionado[1], a_rotacionado[2]));
 
+        gCtx.eye = eye;
+        gCtx.at = at;
         gCtx.view = lookAt(eye, at, up_resultante3);
 
     } else {
@@ -510,6 +513,8 @@ function atualiza_camera(delta) {
         }
         let at = add(P, mult(r + a, direcao_rotacionada3));
         
+        gCtx.eye = eye;
+        gCtx.at = at;
         gCtx.view = lookAt(eye, at, up_resultante3);
     }
 }

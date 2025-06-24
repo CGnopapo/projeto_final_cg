@@ -34,10 +34,10 @@ function Cone_textura(escala_tex = 1, detalhe = 2, id_tex = 3, cor_ambiente, cor
 
         // Configura textura
         if (e_da_internet){
-            configureTexturaDaURL(this.textura, this.id_tex);
+            // configureTexturaDaURL(this.textura, this.id_tex);
         }
         else {
-            configureTextura(this.textura, this.id_tex);
+            this.texture = configura_textura(this.textura, this.id_tex);
         }
         // === Criação do VAO ===
         this.vao = gl.createVertexArray();
@@ -92,6 +92,8 @@ function Cone_textura(escala_tex = 1, detalhe = 2, id_tex = 3, cor_ambiente, cor
 
     this.desenha = function () {
         gl.useProgram(gShaderTextura.program);
+        gl.activeTexture(gl.TEXTURE0 + this.id_tex);
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
         const model = this.model;
         const modelView = mult(gCtx.view, model);

@@ -59,6 +59,7 @@ function Gerenciador_terreno(textura, lado, largura_pista, largura_faixa) {
 
             if (novo_caminhao_em_x < bordaDianteiraDoTerrenoDeTras) {
                 this.terrenos.splice(0, 1);
+                gFloresta.origens_arvores.splice(0, gFloresta.origens_arvores.length / 4);
             }
         }
     };

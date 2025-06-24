@@ -5,7 +5,6 @@ texturaFolhas = new Image();
 texturaFolhas.src = "assets/tree/leaves.jpg";
 
 function Arvore(dist_max) {
-    this.partes = [];
     this.dist_max = dist_max;
 
     this.cor_ambiente = vec4(1, 1, 1, 1.0), // cor ambiente
@@ -15,8 +14,8 @@ function Arvore(dist_max) {
     this.tronco = new Cilindro_textura(
         2, 
         8,
-        vec4(1, 1, 1, 1.0),   // cor ambiente
-        vec4(1, 1, 1, 1.0),   // cor difusa
+        vec4(0.4, 0.4, 0.4, 1.0),   // cor ambiente
+        vec4(0.7, 0.7, 0.7, 1.0),   // cor difusa
         20,                          // alpha especular
         texturaTronco,
         false
@@ -27,8 +26,8 @@ function Arvore(dist_max) {
         1,
         2,
         9,
-        vec4(1, 1, 1, 1.0),   // cor ambiente
-        vec4(1, 1, 1, 1.0),   // cor difusa
+        vec4(0.4, 0.4, 0.4, 1.0),   // cor ambiente
+        vec4(0.7, 0.7, 0.7, 1.0),   // cor difusa
         20,                          // alpha especular
         texturaFolhas,
         false
@@ -59,10 +58,11 @@ function Arvore(dist_max) {
         const ESCALA_SWAY_X = 2;
         const ESCALA_SWAY_Z = 6;
 
-        let now = Date.now() / 600;
-        let x = Math.sin(now) * ESCALA_SWAY_X;
-        let z = Math.cos(now) * ESCALA_SWAY_Z;
-        let orientacao = vec3(x, 0, z);
+        // let now = Date.now() / 600;
+        // let x = Math.sin(now) * ESCALA_SWAY_X;
+        // let z = Math.cos(now) * ESCALA_SWAY_Z;
+        // let orientacao = vec3(x, 0, z);
+        let orientacao = vec3(0, 0, 0);
 
         for (let i = 0; i < NUM_CAMADAS; i++) { 
             let offset = vec3(0, Y_BASE_FOLHAS + i * FATOR_SUBIDA, 0);

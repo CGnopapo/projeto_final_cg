@@ -67,6 +67,13 @@ function Terreno(posicao, lado, largura_pista, largura_faixa, quantidade_em_x, q
                         vertices_q.push(vec4(x_local, y, z, 1.0));
                     }
                 }
+                
+                if (indice_x > 0 && indice_z % 2 == 1 && indice_z < this.quantidade_em_z / 4) {
+                    let p = vec3(this.posicao[0] + vertices_q[0][0], vertices_q[0][1], vertices_q[0][2]);
+                    gFloresta.origens_arvores.push(p);
+                    gFloresta.tamanhos_arvores.push(gFloresta.geraTamanhoAleatorio());
+                }
+
                 let v0 = vertices_q[0]; 
                 let v1 = vertices_q[1];
 
