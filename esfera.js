@@ -1,29 +1,8 @@
-/*
-
-EP3 MAC0420/MAC5744 - Bolhas e Agulhas
-
-Autor: Daiki Teruya Inoue
-Data: 15 de Junho de 2025 
-Comentários: essa solução foi baseada no códigos da apostila,
-principalmente em relação às esferas e o modelo de iluminação de Phong
-
-*/
-
-
-// ========================================================
-// Geração do modelo de um cubo de lado unitário
-// ========================================================
-
-/**  ................................................................
-* Objeto Cubo de lado 1 centrado na origem.
-* 
-* usa função auxiliar quad(pos, nor, vert, a, b, c, d)
-*/
 function Esfera(
     translade = vec3(0, 0, 0), 
     orientacao = vec3(0, 0, 0), 
     escala = vec3(1, 1, 1),
-    emissao = vec4(1, 1, 1, 0),
+    emissao = vec4(1, 0, 0, 0),
     ndiv = 2
 ) { 
     const sphereVertexShaderSource = `#version 300 es
@@ -50,13 +29,14 @@ function Esfera(
     uniform vec3 uCorNeblina;
 
     const float limiteInferior = 0.0;
-    const float limiteSuperior = 100.0;
+    const float limiteSuperior = 0.7;
     
     void main() {
         corSaida = uEmissao;
 
         float fator = (vPosition.y - limiteInferior) / (limiteSuperior - limiteInferior);
         fator = clamp(fator, 0.0, 1.0);
+        //fator = 1.0;
         corSaida = mix(vec4(uCorNeblina, 1.0), corSaida, fator);
     }
     `;

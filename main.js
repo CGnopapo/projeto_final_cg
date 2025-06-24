@@ -273,12 +273,12 @@ function main() {
     pista.adiciona_ao_cenario();
 
     const SOL_ESCALA = 8;
-    gSol = new Esfera(vec3(300, 0, 0), vec3(0, 0, 0), vec3(SOL_ESCALA, SOL_ESCALA, SOL_ESCALA), vec4(0.99, 0.94, 0.78, .3), 3);
+    gSol = new Esfera(vec3(300, 0, 0), vec3(0, 0, 0), vec3(SOL_ESCALA, SOL_ESCALA, SOL_ESCALA), vec4(1, 1, 0, 1), 3);
     gSol.init();
     gSol.adiciona_ao_cenario();
 
     const LUA_ESCALA = 4;
-    gLua = new Esfera(vec3(300, 0, 0), vec3(0, 0, 0), vec3(LUA_ESCALA, LUA_ESCALA, LUA_ESCALA), vec4(0.55, 0.73, 0.94, .3), 3);
+    gLua = new Esfera(vec3(300, 0, 0), vec3(0, 0, 0), vec3(LUA_ESCALA, LUA_ESCALA, LUA_ESCALA), vec4( 0.5, 0.7, 0.8,1), 3);
     gLua.init();                                                                                    // 0.5, 0.7, 0.8
     gLua.adiciona_ao_cenario();
 
