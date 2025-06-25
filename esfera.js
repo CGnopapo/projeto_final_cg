@@ -113,7 +113,7 @@ function Esfera(
         gl.uniformMatrix4fv(this.referencias.uView, false, flatten(gCtx.view));
         gl.uniformMatrix4fv(this.referencias.uPerspective, false, flatten(gCtx.perspective));
         gl.uniform4fv(this.referencias.uEmissao, this.emissao);
-        gl.uniform3fv(this.referencias.uCorNeblina, vec3(.7, .7, .7));
+        gl.uniform3fv(this.referencias.uCorNeblina, FUNDO);
 
         gl.drawArrays(gl.TRIANGLES, 0, this.pos.length);
 
