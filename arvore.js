@@ -7,16 +7,16 @@ texturaFolhas.src = "assets/tree/leaves.jpg";
 function Arvore(dist_max) {
     this.dist_max = dist_max;
 
-    this.cor_ambiente = vec4(1, 1, 1, 1.0), // cor ambiente
-    this.cor_difusao = vec4(1, 1, 1, 1.0), // cor difusa
-    this.alpha_especular = 10 // alpha especular
+    this.cor_ambiente = vec4(1, 1, 1, 1.0);
+    this.cor_difusao = vec4(1, 1, 1, 1.0);
+    this.alpha_especular = 10;
 
     this.tronco = new Cilindro_textura(
         2, 
         8,
-        vec4(0.4, 0.4, 0.4, 1.0),   // cor ambiente
-        vec4(0.7, 0.7, 0.7, 1.0),   // cor difusa
-        20,                          // alpha especular
+        vec4(0.4, 0.4, 0.4, 1.0),
+        vec4(0.7, 0.7, 0.7, 1.0),
+        20,
         texturaTronco,
         false
     );
@@ -26,9 +26,9 @@ function Arvore(dist_max) {
         1,
         2,
         9,
-        vec4(0.4, 0.4, 0.4, 1.0),   // cor ambiente
-        vec4(0.7, 0.7, 0.7, 1.0),   // cor difusa
-        20,                          // alpha especular
+        vec4(0.4, 0.4, 0.4, 1.0),
+        vec4(0.7, 0.7, 0.7, 1.0),
+        20,
         texturaFolhas,
         false
     );
@@ -39,12 +39,9 @@ function Arvore(dist_max) {
         gObjetos.push(this);
     };
 
-    // Joga parte da pista para frente do caminhão
     this.atualiza_posicao_orientacao = function (delta) {};
 
-    this.atualiza_model = function () {
-        
-    };
+    this.atualiza_model = function () {};
 
     this.desenha = function (origem, fatorTamanho) {
         const ALTURA = 2.2 * fatorTamanho;
@@ -55,8 +52,11 @@ function Arvore(dist_max) {
         const FATOR_SUBIDA = .9 * fatorTamanho;
         const Y_BASE_FOLHAS = 3 * fatorTamanho;
 
-        const ESCALA_SWAY_X = 2;
-        const ESCALA_SWAY_Z = 6;
+        /*
+            Comentado por questões de performance
+        */
+        // const ESCALA_SWAY_X = 2;
+        // const ESCALA_SWAY_Z = 6;
 
         // let now = Date.now() / 600;
         // let x = Math.sin(now) * ESCALA_SWAY_X;

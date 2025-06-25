@@ -16,7 +16,7 @@ function Cilindro_textura(detalhe = 2, id_tex = 3, cor_ambiente, cor_difusao, al
         const OFFSET_Y = vec4(0, 1, 0, 0);
 
         gl.useProgram(gShaderTextura.program);
-        // Gera as posições e normais
+
         let vertices_base = aproximeDisco(this.detalhe);
         let vertices_topo = vertices_base.map((v) => add(v, OFFSET_Y));
         let vertices = vertices_base.concat(vertices_topo);
@@ -72,10 +72,7 @@ function Cilindro_textura(detalhe = 2, id_tex = 3, cor_ambiente, cor_difusao, al
 
     
 
-    this.atualiza_posicao_orientacao = function(delta){
-        // this.posicao = add(this.posicao, mult(delta, this.velo_trans));
-        // this.orientacao = add(this.orientacao, mult(delta, this.vel_rotacao));
-    }
+    this.atualiza_posicao_orientacao = function(delta) {}
 
     this.atualiza_model = function (posicao, orientacao, escala) {
         let model = translate(posicao[0], posicao[1], posicao[2]);

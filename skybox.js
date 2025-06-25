@@ -59,7 +59,7 @@ function Skybox() {
     this.init = function () {
         this.orientacao = 0;
 
-        this.attribs = {
+        this.referencias = {
             position: gl.getAttribLocation(this.program, "aPosition"),
             skyboxDia: gl.getUniformLocation(this.program, "uSkyboxDia"),
             skyboxNoite: gl.getUniformLocation(this.program, "uSkyboxNoite"),
@@ -76,8 +76,8 @@ function Skybox() {
         gl.bindBuffer(gl.ARRAY_BUFFER, bufVertices);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(VERTICES), gl.STATIC_DRAW);
 
-        gl.vertexAttribPointer(this.attribs.position, 2, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(this.attribs.position);
+        gl.vertexAttribPointer(this.referencias.position, 2, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(this.referencias.position);
 
         let diaInfos = this.geraInfosFacesSkybox('skybox_day');
         this.carregaInfosFacesSkybox(diaInfos, DIA_ID);
@@ -115,13 +115,13 @@ function Skybox() {
         let viewDirectionProjectionInverseMatrix = inverse(viewDirectionProjectionMatrix);
 
         gl.uniformMatrix4fv(
-            this.attribs.projInverse, 
+            this.referencias.projInverse, 
             false,
             flatten(viewDirectionProjectionInverseMatrix)
         );
       
-        gl.uniform1i(this.attribs.skyboxDia, DIA_ID);
-        gl.uniform1i(this.attribs.skyboxNoite, NOITE_ID);
+        gl.uniform1i(this.referencias.skyboxDia, DIA_ID);
+        gl.uniform1i(this.referencias.skyboxNoite, NOITE_ID);
 
         const LIMITE_DIA = .5 - DURACAO_TRANSICAO / DURACAO_DIA;
         const LIMITE_NOITE = 1 - DURACAO_TRANSICAO / DURACAO_DIA;
@@ -138,8 +138,8 @@ function Skybox() {
             this.fator_dia_noite = 1 - (this.progresso_tempo - LIMITE_NOITE) / (DURACAO_TRANSICAO / DURACAO_DIA);
         }
 
-        gl.uniform1f(this.attribs.fatorDiaNoite, this.fator_dia_noite);
-        gl.uniform4fv(this.attribs.corNeblina, FUNDO);
+        gl.uniform1f(this.referencias.fatorDiaNoite, this.fator_dia_noite);
+        gl.uniform4fv(this.referencias.corNeblina, FUNDO);
 
         gl.depthFunc(gl.LEQUAL);
 

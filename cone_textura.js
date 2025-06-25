@@ -28,7 +28,6 @@ function Cone_textura(escala_tex = 1, detalhe = 2, id_tex = 3, cor_ambiente, cor
         for (let i = 0; i < num_lados; i++) {
             let j = (i + 1) % num_lados;
             this.tri_textura_cone(this.pos, this.nor, this.textura_st, vertices, num_lados, j, i);
-            // Essa base está comprimida. Um mapeamento melhor precisa ser cozido
             this.tri_textura_cone(this.pos, this.nor, this.textura_st, vertices, num_lados + 1, i, j);
         }
 
@@ -76,8 +75,8 @@ function Cone_textura(escala_tex = 1, detalhe = 2, id_tex = 3, cor_ambiente, cor
     };
 
     
-    // Operações essenciais
-    this.atualiza_posicao_orientacao = function(delta){
+    //  Está aqui mas não é chamado no código por questões de performance
+    this.atualiza_posicao_orientacao = function(delta) {
         this.sway();
     }
 

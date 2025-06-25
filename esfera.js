@@ -50,7 +50,7 @@ function Esfera(
         vec3( 0.,  0., -1.)
     ];
 
-    this.pos = [];  // vetor de posições
+    this.pos = [];
 
     this.translade = translade;
     this.orientacao = orientacao;
@@ -64,7 +64,7 @@ function Esfera(
     this.init = function () {
         this.program = makeProgram(gl, sphereVertexShaderSource, sphereFragmentShaderSource);
 
-        this.attribs = {
+        this.referencias = {
             aPosition: gl.getAttribLocation(this.program, "aPosition"),
 
             uModel: gl.getUniformLocation(this.program, "uModel"),
@@ -99,8 +99,8 @@ function Esfera(
         gl.bindBuffer(gl.ARRAY_BUFFER, bufVertices);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(this.pos), gl.STATIC_DRAW);
 
-        gl.vertexAttribPointer(this.attribs.aPosition, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(this.attribs.aPosition);
+        gl.vertexAttribPointer(this.referencias.aPosition, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(this.referencias.aPosition);
 
         gl.bindVertexArray(null);
     }
@@ -109,11 +109,11 @@ function Esfera(
         gl.useProgram(this.program);
         gl.bindVertexArray(this.vao);
 
-        gl.uniformMatrix4fv(this.attribs.uModel, false, flatten(this.model));
-        gl.uniformMatrix4fv(this.attribs.uView, false, flatten(gCtx.view));
-        gl.uniformMatrix4fv(this.attribs.uPerspective, false, flatten(gCtx.perspective));
-        gl.uniform4fv(this.attribs.uEmissao, this.emissao);
-        gl.uniform3fv(this.attribs.uCorNeblina, vec3(.7, .7, .7));
+        gl.uniformMatrix4fv(this.referencias.uModel, false, flatten(this.model));
+        gl.uniformMatrix4fv(this.referencias.uView, false, flatten(gCtx.view));
+        gl.uniformMatrix4fv(this.referencias.uPerspective, false, flatten(gCtx.perspective));
+        gl.uniform4fv(this.referencias.uEmissao, this.emissao);
+        gl.uniform3fv(this.referencias.uCorNeblina, vec3(.7, .7, .7));
 
         gl.drawArrays(gl.TRIANGLES, 0, this.pos.length);
 
@@ -125,13 +125,13 @@ function Esfera(
     };
 
     this.adiciona_ao_cenario = function () {
-        gObjetos.push(this); // adiciona o carro inteiro
+        gObjetos.push(this);
     };
 
 
     this.atualiza_model = function() {
         let model = mat4();
-        // scale and translate
+
         model = mult(model, translate(caminhao.posicao[0], caminhao.posicao[1], caminhao.posicao[2]));
         
         model = mult(model, rotateX(-this.orientacao[0]));
