@@ -24,13 +24,9 @@ function Floresta(num_arvores, dist_max) {
 
     this.desenha = function () {
         this.origens_arvores.forEach((origem, indice) => {
-            // Check if tree is behind the camera (simple culling)
-            // For more accurate culling, you'd check against the view frustum
             let dist_arvore = subtract(origem, gCtx.eye);
             let produto_escalar = dot(normalize(dist_arvore), subtract(gCtx.at, gCtx.eye));
             
-            // If tree is in front of camera (within ~90 degrees of view direction)
-            // and not too far away
             if (produto_escalar > 0 && length(dist_arvore) < DIST_MAX) {
                 this.arvore.desenha(origem, this.tamanhos_arvores[indice]);
             }
